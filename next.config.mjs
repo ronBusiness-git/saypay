@@ -23,14 +23,15 @@ async function logDbStatus() {
 
   try {
     const conn = await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 2000,
+      connectTimeoutMS: 2000,
       bufferCommands: false,
     });
     const dbName = conn.connection.name || "saypay";
     console.log(`[MongoDB] ✅ Database connection verified for build! Connected to: "${dbName}"`);
     await mongoose.disconnect();
   } catch (err) {
-    console.warn(`[MongoDB] ⚠️  Build-time connection check failed: ${err.message}`);
+    console.warn(`[MongoDB] ⚠️  Build-time connection check: ${err.message}`);
   }
 }
 
