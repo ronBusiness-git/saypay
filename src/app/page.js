@@ -72,7 +72,7 @@ export default function Home() {
       </section>
 
       <footer className="border-t border-slate-800 py-7 text-center text-sm text-slate-500">
-        © {new Date().getFullYear()} SayPay. Powered by Verina AI.
+        © 2026 SayPay. Powered by Verina AI.
       </footer>
     </main>
   );
