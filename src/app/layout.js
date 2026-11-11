@@ -1,6 +1,5 @@
 import "./globals.css";
-import Navbar from "../components/Navbar.js";
-import Footer from "../components/Footer.js";
+import AppShell from "../components/layout/AppShell.js";
 
 export const metadata = {
   title: "SayPay — Voice-First Payment Safety Companion",
@@ -16,14 +15,8 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className="antialiased">
-        <div className="app-shell">
-          <Navbar />
-          <main className="main-content" id="main-content">
-            {children}
-          </main>
-          <Footer />
-        </div>
+      <body className="antialiased selection:bg-surface-container selection:text-primary">
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
