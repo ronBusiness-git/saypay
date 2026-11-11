@@ -2,11 +2,15 @@
   "name": "saypay",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed": "node scripts/seed-demo-data.js",
+    "test:duplicate": "node scripts/test-duplicate-query.js",
+    "test:errors": "node scripts/test-error-handling.js"
   },
   "dependencies": {
     "@google/genai": "^3.1.0",
