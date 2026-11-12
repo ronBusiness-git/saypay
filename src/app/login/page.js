@@ -3,348 +3,258 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import SayPayLogo from "../../components/SayPayLogo.js";
-import { signInDemo, signOutDemo, useDemoSession } from "../../lib/demoAuth.js";
+import { login, signInDemo, signOutDemo, useDemoSession } from "@/lib/demoAuth.js";
 
-const DEMO_EMAIL = "demo@saypay.app";
-const DEMO_PASSWORD = "saypay-demo";
-
-const ASSIST_STEPS = ["Listening to intent", "Reading payment request", "Comparing both sources", "Applying safety rules"];
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function FieldError({ children }) {
-  if (!children) return null;
-  return (
-    <p className="mt-1.5 flex items-center gap-1 font-body-sm text-[11px] text-[#DC2626]">
-      <span className="material-symbols-outlined text-[13px]">error</span>
-      {children}
-    </p>
-  );
-}
+const DEMO_ACCOUNTS = [
+  {
+    role: "buyer",
+    label: "Continue as Buyer",
+    name: "John Doe",
+    email: "buyer@saypay.app",
+    password: "saypay123",
+    badge: "Buyer Demo",
+    description: "Review & pay invoices with SayPay conversational AI assistant.",
+    icon: "🛍️",
+  },
+  {
+    role: "seller",
+    label: "Continue as Seller",
+    name: "GreenLeaf Demo Store",
+    email: "seller@saypay.app",
+    password: "saypay123",
+    badge: "Merchant Demo",
+    description: "Manage issued invoices and review incoming payments.",
+    icon: "🌿",
+  },
+];
 
 export default function LoginPage() {
   const router = useRouter();
   const session = useDemoSession();
-  const [email, setEmail] = useState(DEMO_EMAIL);
-  const [password, setPassword] = useState(DEMO_PASSWORD);
+
+  const [email, setEmail] = useState("buyer@saypay.app");
+  const [password, setPassword] = useState("saypay123");
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [errorMessage, setErrorMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    if (submitting) return;
-
-    const nextErrors = {};
-    if (!EMAIL_PATTERN.test(email.trim())) {
-      nextErrors.email = "Enter a valid email address.";
+  async function handleFormSubmit(e) {
+    e.preventDefault();
+    if (!email.trim() || !password) {
+      setErrorMessage("Please enter both email and password.");
+      return;
     }
-    if (password.length < 6) {
-      nextErrors.password = "Password must be at least 6 characters.";
-    }
-    setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
 
     setSubmitting(true);
-    window.setTimeout(() => {
-      signInDemo(email.trim());
-      router.push("/");
-    }, 650);
-  };
+    setErrorMessage("");
 
-  const useDemoCredentials = () => {
-    setEmail(DEMO_EMAIL);
-    setPassword(DEMO_PASSWORD);
-    setErrors({});
-  };
+    const res = await login(email.trim(), password);
+    setSubmitting(false);
+
+    if (res.success) {
+      router.push("/");
+    } else {
+      setErrorMessage(res.error || "Invalid credentials.");
+    }
+  }
+
+  async function handleQuickLogin(account) {
+    setSubmitting(true);
+    setErrorMessage("");
+    setEmail(account.email);
+    setPassword(account.password);
+
+    const res = await signInDemo(account.email, account.password);
+    setSubmitting(false);
+
+    if (res.success) {
+      router.push("/");
+    } else {
+      setErrorMessage(res.error || "Quick login failed.");
+    }
+  }
 
   return (
-    <main className="mx-auto w-full max-w-[1040px] px-4 py-8 md:px-margin-desktop md:py-14">
-      <div className="overflow-hidden rounded-2xl border border-[#DFE5E8] bg-white shadow-[0_18px_50px_-24px_rgba(15,29,39,0.35)]">
-        <div className="grid lg:grid-cols-[1.05fr_1fr]">
-          {/* Brand / live assist panel */}
-          <aside className="relative overflow-hidden bg-[#0B3A33] px-6 py-8 md:px-9 md:py-10 text-white">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-[#00A884]/25 blur-2xl"
-            />
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-[#78D8BD]/15 blur-2xl"
-            />
-
-            <div className="relative">
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15">
-                  <SayPayLogo className="h-6 w-auto" showWordmark={false} />
-                </span>
-                <span className="font-headline-sm text-headline-sm text-white">SayPay</span>
+    <main className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center items-center px-4 py-12">
+      <div className="w-full max-w-[960px] overflow-hidden rounded-3xl border border-[#E2E8F0] bg-white shadow-xl shadow-slate-200/50">
+        <div className="grid lg:grid-cols-[1fr_1.1fr]">
+          {/* Brand & Value Proposition Column */}
+          <aside className="relative overflow-hidden bg-gradient-to-br from-[#003087] via-[#004B8D] to-[#0070BA] p-8 md:p-10 text-white flex flex-col justify-between">
+            <div className="relative z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center font-black text-xl text-white">
+                  P
+                </div>
+                <div>
+                  <span className="font-extrabold text-xl tracking-tight">SayPay</span>
+                  <span className="block text-xs text-blue-200 font-medium">PayPal AI Safety Gateway</span>
+                </div>
               </div>
 
-              <h1 className="mt-7 max-w-[19rem] font-headline-lg text-[28px] leading-[34px] font-semibold tracking-tight">
-                Say it. Check it.
-                <br />
-                Pay with confidence.
-              </h1>
-              <p className="mt-3 hidden max-w-[22rem] font-body-md text-[13px] leading-relaxed text-[#CDEBE3] sm:block">
-                Sign in to review voice-captured payment requests, compare them against the merchant
-                record, and clear only what passes every safety rule.
-              </p>
+              <div className="mt-10">
+                <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight leading-tight">
+                  Say it. Check it. <br />
+                  Pay with confidence.
+                </h1>
+                <p className="mt-3 text-sm text-blue-100 leading-relaxed">
+                  SayPay powers voice-driven, conversational payments backed by deterministic
+                  MatchCheck verification and human 1-click PayPal authorization.
+                </p>
+              </div>
 
-              {/* Live assistant orb */}
-              <div className="mt-6 flex items-center gap-4 sm:mt-8">
-                <span className="relative flex h-16 w-16 shrink-0 items-center justify-center">
-                  <span className="voice-ring-1 absolute inset-0 rounded-full border border-[#78D8BD]/60" />
-                  <span className="voice-ring-2 absolute inset-0 rounded-full border border-[#78D8BD]/40" />
-                  <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-[#087F68] shadow-lg ring-4 ring-[#087F68]/30">
-                    <span className="material-symbols-outlined text-[22px] text-white">graphic_eq</span>
+              {/* 3 Step Indicator */}
+              <div className="mt-8 space-y-3">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-white/10 border border-white/10 backdrop-blur-xs">
+                  <span className="w-6 h-6 rounded-full bg-white text-[#003087] flex items-center justify-center font-bold text-xs">
+                    1
                   </span>
-                </span>
-                <div className="flex h-9 items-end gap-1" aria-hidden="true">
-                  {["h-3", "h-6", "h-8", "h-5", "h-7", "h-4"].map((height, i) => (
-                    <span
-                      key={height + i}
-                      className={`wave-bar-${i + 1} w-1.5 rounded-full bg-[#78D8BD] ${height}`}
-                    />
+                  <span className="text-xs font-medium text-white">Speak or type your payment intent</span>
+                </div>
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-white/10 border border-white/10 backdrop-blur-xs">
+                  <span className="w-6 h-6 rounded-full bg-white text-[#003087] flex items-center justify-center font-bold text-xs">
+                    2
+                  </span>
+                  <span className="text-xs font-medium text-white">MatchCheck verifies amounts & recipient</span>
+                </div>
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-white/10 border border-white/10 backdrop-blur-xs">
+                  <span className="w-6 h-6 rounded-full bg-white text-[#003087] flex items-center justify-center font-bold text-xs">
+                    3
+                  </span>
+                  <span className="text-xs font-medium text-white">Authorize with 1-click PayPal Sandbox</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative z-10 pt-8 border-t border-white/10 text-xs text-blue-200">
+              Built for the PayPal AI Developer Hackathon 2026.
+            </div>
+          </aside>
+
+          {/* Form & 1-Click Login Column */}
+          <section className="p-8 md:p-10 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-[#0F172A]">Welcome to SayPay</h2>
+                  <p className="text-xs text-[#64748B] mt-0.5">Sign in to your account or use quick demo access</p>
+                </div>
+                <Link
+                  href="/signup"
+                  className="text-xs font-semibold text-[#0070BA] hover:underline"
+                >
+                  Create account
+                </Link>
+              </div>
+
+              {/* Quick 1-Click Demo Logins */}
+              <div className="mt-6">
+                <p className="text-xs font-bold text-[#475569] uppercase tracking-wider mb-2.5">
+                  1-Click Demo Profiles:
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {DEMO_ACCOUNTS.map((acc) => (
+                    <button
+                      key={acc.email}
+                      type="button"
+                      onClick={() => handleQuickLogin(acc)}
+                      disabled={submitting}
+                      className="p-3.5 rounded-2xl border border-[#CBD5E1] hover:border-[#0070BA] hover:bg-[#F0F9FF] text-left transition-all group shadow-2xs"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-base">{acc.icon}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-[#E2E8F0] text-[#334155] group-hover:bg-[#0070BA] group-hover:text-white transition-colors">
+                          {acc.badge}
+                        </span>
+                      </div>
+                      <p className="font-bold text-xs text-[#0F172A]">{acc.name}</p>
+                      <p className="text-[11px] text-[#64748B] truncate mt-0.5">{acc.email}</p>
+                      <span className="block mt-2 text-[11px] text-[#0070BA] font-semibold group-hover:underline">
+                        Sign in ➔
+                      </span>
+                    </button>
                   ))}
                 </div>
               </div>
 
-              <ul className="mt-6 hidden space-y-2.5 sm:block">
-                {ASSIST_STEPS.map((step, i) => (
-                  <li key={step} className="flex items-center gap-2.5 font-body-sm text-[12px] text-[#CDEBE3]">
-                    <span
-                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
-                        i === 0
-                          ? "bg-[#78D8BD] text-[#0B3A33]"
-                          : "border border-white/25 bg-white/5 text-[#9FD9C9]"
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-[12px]">
-                        {i === 0 ? "graphic_eq" : "check"}
-                      </span>
-                    </span>
-                    {step}
-                  </li>
-                ))}
-              </ul>
-
-              <p className="mt-6 hidden items-start gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 font-body-sm text-[11px] leading-relaxed text-[#BFE6DA] sm:mt-8 sm:flex">
-                <span className="material-symbols-outlined text-[14px] text-[#78D8BD]">verified_user</span>
-                Server rules decide every result. The assistant only narrates the checks.
-              </p>
-            </div>
-          </aside>
-
-          {/* Sign-in form */}
-          <section className="px-6 py-8 md:px-9 md:py-10">
-            {session ? (
-              <div className="flex h-full flex-col justify-center">
-                <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-[#A7F3D0] bg-[#EAF7F1] px-2.5 py-1 font-label-sm text-[10px] font-semibold text-[#107E3E]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                  Session active
-                </span>
-                <h2 className="mt-4 font-headline-md text-headline-md text-on-surface">
-                  You&apos;re already signed in
-                </h2>
-                <p className="mt-2 font-body-md text-body-md text-secondary">
-                  Signed in as <span className="font-semibold text-on-surface">{session.email}</span>.
-                </p>
-                <div className="mt-7 flex flex-col gap-2.5 sm:flex-row">
-                  <Link
-                    href="/"
-                    className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-primary-container px-5 font-label-md text-label-md font-semibold text-white shadow-sm transition-all hover:bg-[#066653] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary-container"
-                  >
-                    Continue to dashboard
-                    <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => signOutDemo()}
-                    className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-[10px] border border-[#DFE5E8] bg-white px-4 font-label-md text-label-md font-semibold text-secondary transition-colors hover:border-[#FECACA] hover:bg-[#FFF5F5] hover:text-[#DC2626]"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">logout</span>
-                    Log out
-                  </button>
+              {/* Divider */}
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-[#E2E8F0]" />
                 </div>
-                <p className="mt-5 font-body-sm text-[11px] text-secondary">
-                  Use the log out button in the navbar to switch accounts.
-                </p>
+                <div className="relative flex justify-center text-xs">
+                  <span className="bg-white px-3 text-[#94A3B8]">or sign in with password</span>
+                </div>
               </div>
-            ) : (
-              <>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#DFE5E8] bg-[#F7F8FA] px-2.5 py-1 font-label-sm text-[10px] font-semibold uppercase tracking-wide text-secondary">
-                  <span className="material-symbols-outlined text-[13px] text-primary">lock</span>
-                  Demo sign in
-                </span>
 
-                <h2 className="mt-4 font-headline-md text-headline-md text-on-surface">Welcome back</h2>
-                <p className="mt-1.5 font-body-md text-body-md text-secondary">
-                  Use the demo merchant credentials to open the workspace.
-                </p>
+              {/* Error Message */}
+              {errorMessage && (
+                <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs">
+                  {errorMessage}
+                </div>
+              )}
 
-                <div className="mt-5 flex flex-col gap-2 rounded-xl border border-[#DFE5E8] bg-[#F7F8FA] p-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <p className="font-label-sm text-[10px] font-semibold uppercase tracking-wide text-secondary">
-                      Demo credentials
-                    </p>
-                    <p className="mt-0.5 truncate font-code-md text-[12px] text-on-surface">
-                      {DEMO_EMAIL} · {DEMO_PASSWORD}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={useDemoCredentials}
-                    className="inline-flex shrink-0 items-center gap-1 self-start rounded-lg border border-[#A7F3D0] bg-[#EAF7F1] px-2.5 py-1.5 font-label-sm text-[11px] font-semibold text-[#107E3E] transition-colors hover:bg-[#DCF3E8] sm:self-auto"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">content_paste</span>
-                    Autofill
-                  </button>
+              {/* Credentials Form */}
+              <form onSubmit={handleFormSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-[#334155] mb-1">
+                    Email address
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder="you@saypay.app"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#CBD5E1] text-sm text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0070BA] focus:border-transparent transition-all"
+                  />
                 </div>
 
-                <form className="mt-6 space-y-4" onSubmit={handleSubmit} noValidate>
-                  <div>
-                    <label
-                      htmlFor="login-email"
-                      className="block font-label-md text-label-md text-on-surface"
+                <div>
+                  <label className="block text-xs font-bold text-[#334155] mb-1">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      placeholder="Enter your password"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-[#CBD5E1] text-sm text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0070BA] focus:border-transparent transition-all pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-2.5 text-xs text-[#64748B] hover:text-[#0F172A]"
                     >
-                      Email address
-                    </label>
-                    <div
-                      className={`mt-1.5 flex items-center rounded-lg border bg-white pl-3 transition-colors focus-within:ring-2 focus-within:ring-offset-1 ${
-                        errors.email
-                          ? "border-[#FECACA] focus-within:ring-[#FECACA]"
-                          : "border-[#DFE5E8] focus-within:border-primary-container focus-within:ring-[#A7F3D0]"
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-[18px] text-secondary">mail</span>
-                      <input
-                        id="login-email"
-                        name="email"
-                        type="email"
-                        autoComplete="email"
-                        value={email}
-                        onChange={(e) => {
-                          setEmail(e.target.value);
-                          if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
-                        }}
-                        aria-invalid={Boolean(errors.email)}
-                        aria-describedby={errors.email ? "login-email-error" : undefined}
-                        placeholder="you@merchant.com"
-                        className="min-h-[44px] w-full rounded-lg bg-transparent px-2.5 font-body-md text-body-md text-on-surface placeholder:text-[#9AA6AF] focus:outline-none"
-                      />
-                    </div>
-                    <div id="login-email-error">
-                      <FieldError>{errors.email}</FieldError>
-                    </div>
+                      {showPassword ? "Hide" : "Show"}
+                    </button>
                   </div>
-
-                  <div>
-                    <label
-                      htmlFor="login-password"
-                      className="block font-label-md text-label-md text-on-surface"
-                    >
-                      Password
-                    </label>
-                    <div
-                      className={`mt-1.5 flex items-center rounded-lg border bg-white pl-3 transition-colors focus-within:ring-2 focus-within:ring-offset-1 ${
-                        errors.password
-                          ? "border-[#FECACA] focus-within:ring-[#FECACA]"
-                          : "border-[#DFE5E8] focus-within:border-primary-container focus-within:ring-[#A7F3D0]"
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-[18px] text-secondary">key</span>
-                      <input
-                        id="login-password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        autoComplete="current-password"
-                        value={password}
-                        onChange={(e) => {
-                          setPassword(e.target.value);
-                          if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
-                        }}
-                        aria-invalid={Boolean(errors.password)}
-                        aria-describedby={errors.password ? "login-password-error" : undefined}
-                        placeholder="Enter your password"
-                        className="min-h-[44px] w-full rounded-lg bg-transparent px-2.5 font-body-md text-body-md text-on-surface placeholder:text-[#9AA6AF] focus:outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((prev) => !prev)}
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-secondary transition-colors hover:bg-[#F7F8FA] hover:text-on-surface"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">
-                          {showPassword ? "visibility_off" : "visibility"}
-                        </span>
-                      </button>
-                    </div>
-                    <div id="login-password-error">
-                      <FieldError>{errors.password}</FieldError>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-3">
-                    <label className="flex items-center gap-2 font-body-sm text-[12px] text-secondary">
-                      <input
-                        id="keep-signed-in"
-                        name="keepSignedIn"
-                        type="checkbox"
-                        defaultChecked
-                        className="h-4 w-4 rounded border-[#DFE5E8] accent-[#087F68]"
-                      />
-                      Keep me signed in on this demo
-                    </label>
-                    <span className="font-body-sm text-[12px] text-secondary underline decoration-dotted underline-offset-2">
-                      Forgot password?
-                    </span>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[10px] bg-primary-container px-5 font-label-md text-label-md font-semibold text-white shadow-sm transition-all hover:bg-[#066653] active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary-container disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    {submitting ? (
-                      <>
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                        Signing in…
-                      </>
-                    ) : (
-                      <>
-                        Log in
-                        <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-                      </>
-                    )}
-                  </button>
-                </form>
-
-                <p className="mt-5 flex items-start gap-1.5 font-body-sm text-[11px] leading-relaxed text-secondary">
-                  <span className="material-symbols-outlined text-[14px] text-[#B45309]">warning</span>
-                  Frontend demo only. No real accounts, credentials, or money are involved.
-                </p>
-
-                <div className="mt-5 border-t border-[#DFE5E8] pt-4">
-                  <Link
-                    href="/"
-                    className="inline-flex items-center gap-1 font-label-md text-label-md font-semibold text-primary transition-colors hover:text-primary-container"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-                    Back to dashboard
-                  </Link>
                 </div>
-              </>
-            )}
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full py-3 rounded-xl bg-[#0070BA] hover:bg-[#005ea6] text-white font-bold text-sm shadow-md shadow-[#0070BA]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  {submitting ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Signing in...
+                    </>
+                  ) : (
+                    "Sign in with SayPay"
+                  )}
+                </button>
+              </form>
+            </div>
+
+            <p className="mt-8 text-center text-xs text-[#94A3B8]">
+              Protected by PayPal Sandbox Integration · SayPay v1.0
+            </p>
           </section>
         </div>
       </div>
-
-      <p className="mt-5 flex items-center justify-center gap-1.5 font-body-sm text-[11px] text-secondary">
-        <span className="material-symbols-outlined text-[14px]">shield</span>
-        PayPal Sandbox · Simulated gateway · Mock ledger
-      </p>
     </main>
   );
 }

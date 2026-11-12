@@ -1,19 +1,15 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { Suspense } from "react";
 import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
 import SandboxBanner from "./SandboxBanner.js";
 import DisclaimerFooter from "./DisclaimerFooter.js";
-import DemoLabDrawer from "../drawers/DemoLabDrawer.js";
-import SettingsDrawer from "../drawers/SettingsDrawer.js";
-import AuditLogDrawer from "../drawers/AuditLogDrawer.js";
-import SandboxWelcomeModal from "../modals/SandboxWelcomeModal.js";
 import {
   MobileTabBarSkeleton,
   NavbarSkeleton,
 } from "../ui/LoadingSkeletons.js";
 
-// Dynamically load navigation components without SSR to avoid usePathname prerender issue
 const TopNavbar = dynamic(() => import("./TopNavbar.js"), {
   ssr: false,
   loading: () => <NavbarSkeleton />,
@@ -24,31 +20,35 @@ const MobileTabBar = dynamic(() => import("./MobileTabBar.js"), {
 });
 
 export default function AppShell({ children }) {
-  const [demoLabOpen, setDemoLabOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [auditLogOpen, setAuditLogOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Clean standalone layout for auth pages and full-screen assist page
+  const isStandalone =
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname === "/new-check";
+
+  if (isStandalone) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC]">
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F7F8FA] text-on-surface">
-      {/* 1. Amber Sandbox Strip (Always visible, sticky) */}
+      {/* 1. Amber Sandbox Strip */}
       <SandboxBanner />
 
-      {/* 2. Desktop Navigation */}
+      {/* 2. Top Navigation */}
       <Suspense fallback={<NavbarSkeleton />}>
-        <TopNavbar
-          onOpenDemoLab={() => setDemoLabOpen(true)}
-          onOpenSettings={() => setSettingsOpen(true)}
-        />
+        <TopNavbar />
       </Suspense>
 
       {/* 3. Main View Area */}
       <div className="flex-1 w-full pb-16 md:pb-0">
-        {React.isValidElement(children)
-          ? React.cloneElement(children, {
-              onOpenAuditLog: () => setAuditLogOpen(true),
-              onOpenDemoLab: () => setDemoLabOpen(true),
-            })
-          : children}
+        {children}
       </div>
 
       {/* 4. Global Footer */}
@@ -58,14 +58,6 @@ export default function AppShell({ children }) {
       <Suspense fallback={<MobileTabBarSkeleton />}>
         <MobileTabBar />
       </Suspense>
-
-      {/* 6. Drawers */}
-      <DemoLabDrawer isOpen={demoLabOpen} onClose={() => setDemoLabOpen(false)} />
-      <SettingsDrawer isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
-      <AuditLogDrawer isOpen={auditLogOpen} onClose={() => setAuditLogOpen(false)} />
-
-      {/* 7. Sandbox Welcome Modal (first visit) */}
-      <SandboxWelcomeModal />
     </div>
   );
 }

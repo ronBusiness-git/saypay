@@ -49,7 +49,36 @@ const CHECK_AREA = `M ${CHECK_POINTS[0].x} ${HEIGHT - PAD.bottom} L ${toLine(
   HEIGHT - PAD.bottom
 } Z`;
 
-export default function ChecksLineChart() {
+export default function ChecksLineChart({ data }) {
+  const pointsData = Array.isArray(data) && data.length > 1 ? data.map(d => ({
+    label: d.date ? new Date(d.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : (d.label || "Day"),
+    checks: d.checks || 0,
+    completed: Math.round((d.volumeMinor || 0) > 0 ? 1 : (d.clear || 0)),
+  })) : POINTS;
+
+  const maxVal = Math.max(5, ...pointsData.map(p => Math.max(p.checks, p.completed)));
+  const innerWidth = WIDTH - PAD.left - PAD.right;
+  const innerHeight = HEIGHT - PAD.top - PAD.bottom;
+
+  const checkPoints = pointsData.map((point, index) => {
+    const x = PAD.left + (index / (pointsData.length - 1)) * innerWidth;
+    const y = HEIGHT - PAD.bottom - (point.checks / maxVal) * innerHeight;
+    return { x, y, ...point };
+  });
+
+  const completedPoints = pointsData.map((point, index) => {
+    const x = PAD.left + (index / (pointsData.length - 1)) * innerWidth;
+    const y = HEIGHT - PAD.bottom - (point.completed / maxVal) * innerHeight;
+    return { x, y, ...point };
+  });
+
+  const checkLine = toLine(checkPoints);
+  const completedLine = toLine(completedPoints);
+  const checkArea = `M ${checkPoints[0].x} ${HEIGHT - PAD.bottom} L ${toLine(
+    checkPoints,
+  ).replaceAll(" ", " L ")} L ${checkPoints[checkPoints.length - 1].x} ${
+    HEIGHT - PAD.bottom
+  } Z`;
   const totalCompleted = POINTS.reduce((sum, point) => sum + point.completed, 0);
 
   return (
@@ -118,10 +147,10 @@ export default function ChecksLineChart() {
             );
           })}
 
-          <path d={CHECK_AREA} fill="url(#checksArea)" className="chart-area" />
+          <path d={checkArea} fill="url(#checksArea)" className="chart-area" />
 
           <polyline
-            points={COMPLETED_LINE}
+            points={completedLine}
             fill="none"
             stroke="#F59E0B"
             strokeWidth="2.25"
@@ -133,7 +162,7 @@ export default function ChecksLineChart() {
           />
 
           <polyline
-            points={CHECK_LINE}
+            points={checkLine}
             fill="none"
             stroke="#087F68"
             strokeWidth="2.5"
@@ -143,12 +172,12 @@ export default function ChecksLineChart() {
             className="chart-line"
           />
 
-          {CHECK_POINTS.map((point, index) => (
+          {checkPoints.map((point, index) => (
             <circle
-              key={point.label}
+              key={point.label + index}
               cx={point.x}
               cy={point.y}
-              r={index === CHECK_POINTS.length - 1 ? 4.5 : 2.75}
+              r={index === checkPoints.length - 1 ? 4.5 : 2.75}
               fill="#FFFFFF"
               stroke="#087F68"
               strokeWidth="2"
@@ -159,15 +188,15 @@ export default function ChecksLineChart() {
             </circle>
           ))}
 
-          {COMPLETED_POINTS.filter((_, index) => index % 2 === 0).map((point) => (
+          {completedPoints.filter((_, index) => index % 2 === 0).map((point, i) => (
             <text
-              key={point.label}
+              key={point.label + i}
               x={point.x}
               y={HEIGHT - 8}
               textAnchor="middle"
               className="fill-[#8A97A0] font-sans text-[9px]"
             >
-              {point.label.replace("May ", "")}
+              {point.label}
             </text>
           ))}
         </svg>

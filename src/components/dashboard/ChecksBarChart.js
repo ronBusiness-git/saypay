@@ -22,8 +22,17 @@ const MAX_TOTAL = Math.max(
   ...BAR_DATA.map((item) => item.clear + item.review + item.blocked),
 );
 
-export default function ChecksBarChart() {
-  const weekTotal = BAR_DATA.reduce(
+export default function ChecksBarChart({ data }) {
+  const chartData = Array.isArray(data) && data.length > 0 ? data.map(d => ({
+    day: d.date ? new Date(d.date + "T00:00:00").toLocaleDateString("en-US", { weekday: "short" }) : (d.day || "Day"),
+    clear: d.clear || 0,
+    review: d.review || 0,
+    blocked: d.blocked || 0,
+  })) : BAR_DATA;
+
+  const maxTotal = Math.max(1, ...chartData.map((item) => item.clear + item.review + item.blocked));
+
+  const weekTotal = chartData.reduce(
     (sum, item) => sum + item.clear + item.review + item.blocked,
     0,
   );
@@ -57,11 +66,11 @@ export default function ChecksBarChart() {
           />
         ))}
 
-        {BAR_DATA.map((item, index) => {
+        {chartData.map((item, index) => {
           const total = item.clear + item.review + item.blocked;
           return (
             <div
-              key={item.day}
+              key={item.day + index}
               className="group relative flex h-full flex-1 flex-col items-center justify-end"
             >
               <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-[#DFE5E8] bg-white px-2.5 py-1.5 text-[10px] font-semibold text-[#15232D] shadow-lg group-hover:block">
@@ -73,7 +82,7 @@ export default function ChecksBarChart() {
 
               <div
                 className="flex w-full max-w-[34px] flex-col justify-end overflow-hidden rounded-t-md"
-                style={{ height: `${(total / MAX_TOTAL) * 100}%` }}
+                style={{ height: `${(total / maxTotal) * 100}%` }}
               >
                 {item.blocked > 0 && (
                   <span

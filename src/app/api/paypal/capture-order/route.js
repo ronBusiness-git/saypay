@@ -1,6 +1,8 @@
 import crypto from "crypto";
 import connectDB from "@/lib/db.js";
 import Transaction from "@/models/Transaction.js";
+import PaymentCheck from "@/models/PaymentCheck.js";
+import Invoice from "@/models/Invoice.js";
 import { capturePayPalOrder, isPayPalConfigured } from "@/lib/paypal.js";
 import { handleApiError, ValidationError, NotFoundError } from "@/lib/errors.js";
 
@@ -74,6 +76,25 @@ export async function POST(request) {
     transaction.paymentStatus = "COMPLETED";
     transaction.paypalStatus = paypalStatus;
     await transaction.save();
+
+    // 5. If this check is linked to an invoice, mark the invoice as PAID
+    try {
+      const paymentCheck = await PaymentCheck.findOne({ checkId });
+      if (paymentCheck?.invoiceId) {
+        await Invoice.findOneAndUpdate(
+          { invoiceId: paymentCheck.invoiceId },
+          {
+            $set: {
+              status: "PAID",
+              transactionId: transaction.transactionId,
+              checkId: transaction.checkId,
+            },
+          }
+        );
+      }
+    } catch (invErr) {
+      console.warn("Could not mark invoice as paid:", invErr?.message || invErr);
+    }
 
     return Response.json({
       transactionId: transaction.transactionId,

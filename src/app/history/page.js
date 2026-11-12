@@ -14,57 +14,6 @@ const SayPayGrid = dynamic(
     ),
   },
 );
-  const [realTransactions, setRealTransactions] = useState([]);
-
-  React.useEffect(() => {
-    fetch("/api/transactions?limit=50")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data && Array.isArray(data.items)) {
-          const mapped = data.items.map((tx) => {
-            const dateObj = new Date(tx.createdAt || Date.now());
-            const dateStr = dateObj.toLocaleDateString("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            });
-            const timeStr = dateObj.toLocaleTimeString("en-GB", {
-              hour: "2-digit",
-              minute: "2-digit",
-            });
-            const initials = (tx.merchantKey || "GL").slice(0, 2).toUpperCase();
-            const amountStr = `${tx.currency || "USD"} ${(tx.amountMinor / 100).toFixed(2)}`;
-
-            return {
-              id: tx.checkId || tx.transactionId,
-              date: dateStr,
-              time: `${timeStr} UTC`,
-              initials,
-              initialsStyle: "bg-[#EAF7F1] text-primary border-[#A7F3D0]",
-              merchant: tx.merchantKey || "GreenLeaf Demo Store",
-              merchantId: `ID: ${tx.paypalOrderId || tx.transactionId?.slice(0, 8)}`,
-              reference: `ref: ${tx.reference || "GL-204"}`,
-              amount: amountStr,
-              matchCheckStatus: "CLEAR",
-              matchCheckCategory: "CLEAR",
-              matchCheckIcon: "dot",
-              matchCheckStyle: "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]",
-              paymentStatus: tx.paymentStatus || "COMPLETED",
-              paymentCategory: tx.paymentStatus || "COMPLETED",
-              paymentIcon: tx.paymentStatus === "COMPLETED" ? "check_circle" : "warning",
-              paymentStyle:
-                tx.paymentStatus === "COMPLETED"
-                  ? "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]"
-                  : "bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]",
-              actionLabel: "View Receipt & Audit",
-              href: `/result/${tx.transactionId}`,
-            };
-          });
-          setRealTransactions(mapped);
-        }
-      })
-      .catch(() => {});
-  }, []);
 
 const transactions = [
   {
@@ -307,7 +256,58 @@ const filterPills = [
 export default function HistoryPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("ALL");
+  const [realTransactions, setRealTransactions] = useState([]);
   const gridApiRef = useRef(null);
+
+  useEffect(() => {
+    fetch("/api/transactions?limit=50")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data.items)) {
+          const mapped = data.items.map((tx) => {
+            const dateObj = new Date(tx.createdAt || Date.now());
+            const dateStr = dateObj.toLocaleDateString("en-GB", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            });
+            const timeStr = dateObj.toLocaleTimeString("en-GB", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+            const initials = (tx.merchantKey || "GL").slice(0, 2).toUpperCase();
+            const amountStr = `${tx.currency || "USD"} ${(tx.amountMinor / 100).toFixed(2)}`;
+
+            return {
+              id: tx.checkId || tx.transactionId,
+              date: dateStr,
+              time: `${timeStr} UTC`,
+              initials,
+              initialsStyle: "bg-[#EAF7F1] text-primary border-[#A7F3D0]",
+              merchant: tx.merchantKey || "GreenLeaf Demo Store",
+              merchantId: `ID: ${tx.paypalOrderId || tx.transactionId?.slice(0, 8)}`,
+              reference: `ref: ${tx.reference || "GL-204"}`,
+              amount: amountStr,
+              matchCheckStatus: "CLEAR",
+              matchCheckCategory: "CLEAR",
+              matchCheckIcon: "dot",
+              matchCheckStyle: "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]",
+              paymentStatus: tx.paymentStatus || "COMPLETED",
+              paymentCategory: tx.paymentStatus || "COMPLETED",
+              paymentIcon: tx.paymentStatus === "COMPLETED" ? "check_circle" : "warning",
+              paymentStyle:
+                tx.paymentStatus === "COMPLETED"
+                  ? "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]"
+                  : "bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]",
+              actionLabel: "View Receipt & Audit",
+              href: `/result/${tx.transactionId}`,
+            };
+          });
+          setRealTransactions(mapped);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const filteredTransactions = useMemo(() => {
     const list = [...realTransactions, ...transactions];
