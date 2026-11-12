@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import EchoAvatar from "../EchoAvatar.js";
 
 const PHASES = [
   {
@@ -9,7 +10,7 @@ const PHASES = [
     title: "Listening to you",
     chip: "Voice",
     chipClass: "border-white/25 bg-white/10 text-[#CDEBE3]",
-    icon: "mic",
+    icon: "hearing",
     line: "I want to pay USD 12.50 to GreenLeaf Demo Store for invoice GL-204.",
     meta: "Capturing intent · reading only, nothing is charged",
   },
@@ -110,8 +111,8 @@ export default function AssistantLiveCard() {
     <section className="flex flex-col rounded-2xl border border-[#DFE5E8] bg-white p-5 shadow-[0_1px_3px_rgba(21,35,45,0.04),0_4px_12px_rgba(21,35,45,0.03)]">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#EAF7F1] text-primary ring-1 ring-[#A7F3D0]">
-            <span className="material-symbols-outlined text-[19px]">graphic_eq</span>
+          <span className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#EAF7F1] ring-1 ring-[#A7F3D0]">
+            <EchoAvatar sizes="36px" />
           </span>
           <div>
             <h2 className="font-headline-sm text-headline-sm font-semibold text-[#15232D]">
@@ -157,17 +158,19 @@ export default function AssistantLiveCard() {
               }`}
             />
             <span
-              className={`relative flex h-16 w-16 items-center justify-center rounded-full shadow-lg transition-all duration-300 ${
+              className={`relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full shadow-lg transition-all duration-300 ${
                 running
-                  ? "bg-[#12A386] text-white shadow-[#12A38666] scale-105"
+                  ? "assist-live-avatar bg-[#12A386] text-white shadow-[#12A38666]"
                   : done
-                    ? "bg-[#EAF7F1] text-[#107E3E]"
-                    : "bg-[#087F68] text-white group-hover:bg-[#0F8A72]"
+                    ? "bg-[#EAF7F1] text-[#107E3E] ring-2 ring-[#107E3E]/30"
+                    : "assist-breathe bg-[#087F68] text-white ring-2 ring-[#78D8BD]/50 group-hover:ring-[#78D8BD]"
               }`}
             >
-              <span className="material-symbols-outlined text-[28px]">
-                {done ? "check" : running ? "graphic_eq" : "mic"}
-              </span>
+              {done ? (
+                <span className="material-symbols-outlined text-[28px]">check</span>
+              ) : (
+                <EchoAvatar sizes="64px" />
+              )}
             </span>
           </button>
 
@@ -215,8 +218,8 @@ export default function AssistantLiveCard() {
 
       {/* Narration */}
       <div key={`narration-${status}`} className="animate-assist-rise mt-4 flex items-start gap-2.5">
-        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-container text-white">
-          <span className="material-symbols-outlined text-[14px]">graphic_eq</span>
+        <span className="assist-breathe mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-container ring-1 ring-[#A7F3D0]">
+          <EchoAvatar sizes="28px" />
         </span>
         <div className="min-w-0 rounded-2xl rounded-tl-sm border border-[#DFE5E8] bg-[#F7F8FA] px-3 py-2">
           <p className="font-body-sm text-[11.5px] leading-relaxed text-[#15232D]">{narration}</p>

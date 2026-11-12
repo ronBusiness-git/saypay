@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import SayPayLogo from "../../components/SayPayLogo.js";
+import EchoAvatar from "../../components/EchoAvatar.js";
 import { login, signInDemo, signOutDemo, useDemoSession } from "../../lib/demoAuth.js";
 
 const DEMO_BUYER = {
@@ -138,8 +139,8 @@ export default function LoginPage() {
                 <span className="relative flex h-16 w-16 shrink-0 items-center justify-center">
                   <span className="voice-ring-1 absolute inset-0 rounded-full border border-[#78D8BD]/60" />
                   <span className="voice-ring-2 absolute inset-0 rounded-full border border-[#78D8BD]/40" />
-                  <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-[#087F68] shadow-lg ring-4 ring-[#087F68]/30">
-                    <span className="material-symbols-outlined text-[22px] text-white">graphic_eq</span>
+                  <span className="assist-breathe relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-[#087F68] shadow-lg ring-4 ring-[#087F68]/30">
+                    <EchoAvatar sizes="48px" priority />
                   </span>
                 </span>
                 <div className="flex h-9 items-end gap-1" aria-hidden="true">

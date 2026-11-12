@@ -1,14 +1,15 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import EchoAvatar from "../EchoAvatar.js";
 import { speakSoftly, stopSpeaking } from "../../lib/voice.js";
 
 function VoiceStatusPill({ listening, speaking, voiceEnabled, isThinking, isMuted }) {
   if (!voiceEnabled || isMuted) {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full border border-[#FECACA] bg-[#FFF5F5] px-2.5 py-1 font-label-sm text-label-sm font-semibold text-[#DC2626]">
-        <span className="material-symbols-outlined text-[13px]">mic_off</span>
-        {isMuted ? "Muted" : "Mic off"}
+        <span className="h-2 w-2 rounded-full bg-[#DC2626]" />
+        {isMuted ? "Muted" : "Voice off"}
       </span>
     );
   }
@@ -84,7 +85,7 @@ export default function VoiceAssistPanel({
   useEffect(() => {
     const node = scrollRef.current;
     if (node) node.scrollTop = node.scrollHeight;
-  }, [messages, listening, speaking, isThinking]);
+  }, [messages, listening, speaking, isThinking, mode]);
 
   // Safe Start helper to prevent InvalidStateError on SpeechRecognition
   const safeStart = useCallback(() => {
@@ -274,7 +275,7 @@ export default function VoiceAssistPanel({
       safeStop();
       setListening(false);
       const byeMsg =
-        "Glad I could help! Feel free to tap the microphone whenever you need assistance.";
+        "Glad I could help! Feel free to tap my avatar whenever you need assistance.";
       setMessages((current) => [...current, { role: "assistant", text: byeMsg }]);
       if (useVoice) speak(byeMsg);
       return;
@@ -340,8 +341,7 @@ export default function VoiceAssistPanel({
   // Toggle main microphone
   const handleOrbClick = () => {
     if (!voiceEnabled) {
-      setMode("manual");
-      setTimeout(() => inputRef.current?.focus(), 30);
+      focusManual();
       return;
     }
 
@@ -374,6 +374,7 @@ export default function VoiceAssistPanel({
     if (isMuted) {
       isMutedRef.current = false;
       setIsMuted(false);
+      setMode("voice");
       continuousListeningRef.current = true;
       safeStart();
     } else {
@@ -408,6 +409,48 @@ export default function VoiceAssistPanel({
     setTimeout(() => inputRef.current?.focus(), 30);
   };
 
+  const handleManualFocus = () => {
+    setMode("manual");
+    if (continuousListeningRef.current) {
+      continuousListeningRef.current = false;
+      safeStop();
+      setListening(false);
+    }
+  };
+
+  const isLive = voiceEnabled && !isMuted && (listening || speaking || isThinking);
+  const visibleSuggestions = suggestions.slice(0, 2);
+
+  const statusTitle = !voiceEnabled
+    ? "Voice is paused"
+    : isMuted
+    ? "Microphone is muted"
+    : listening
+    ? "Listening hands-free…"
+    : speaking
+    ? "Echo is speaking…"
+    : isThinking
+    ? "Thinking & evaluating…"
+    : stage === 3
+    ? "MatchCheck verified · ready for payment"
+    : "Tap Echo to speak";
+
+  const statusHint = !voiceEnabled
+    ? disabledMessage
+    : isMuted
+    ? "Tap Mute in the header to start listening again."
+    : stage === 3
+    ? "Human authorization required. Review the details on the right and click 'Pay with PayPal'."
+    : listening
+    ? liveTranscript || "Speak naturally — it sends when you pause. Say 'wait' to hold on."
+    : speaking
+    ? "Listening resumes as soon as Echo finishes."
+    : isThinking
+    ? "Cross-checking deterministic MatchCheck rules."
+    : role === "seller"
+    ? "Try: “Create invoice for buyer@saypay.app for 3 items $45”"
+    : "Try: “Pay GreenLeaf coffee invoice” or “Show unpaid bills”";
+
   return (
     <section
       className={`overflow-hidden rounded-2xl transition-all duration-300 ${
@@ -419,11 +462,17 @@ export default function VoiceAssistPanel({
       {/* Assistant header */}
       <div className="flex items-center justify-between gap-3 border-b border-[#DFE5E8] px-4 py-3">
         <div className="flex min-w-0 items-center gap-2.5">
-          <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#EAF7F1] text-primary-container">
-            <span className="material-symbols-outlined text-[20px]">
-              graphic_eq
-            </span>
-            <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-[#107E3E]" />
+          <div
+            className={`relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-white ring-1 ring-[#DFE5E8] transition-all duration-300 ${
+              isLive ? "ring-2 ring-[#78D8BD]" : ""
+            }`}
+          >
+            <EchoAvatar priority />
+            <span
+              className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${
+                isMuted ? "bg-[#DC2626]" : isLive ? "animate-pulse bg-[#107E3E]" : "bg-[#107E3E]"
+              }`}
+            />
           </div>
           <div className="min-w-0">
             <p className="truncate font-label-lg text-label-lg font-bold text-on-surface">
@@ -441,16 +490,14 @@ export default function VoiceAssistPanel({
             type="button"
             onClick={handleToggleMute}
             aria-label={isMuted ? "Unmute microphone" : "Mute microphone"}
-            className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 font-label-sm text-label-sm font-semibold transition-colors ${
+            aria-pressed={isMuted}
+            className={`inline-flex min-h-[28px] items-center rounded-lg border px-2 py-1 font-label-sm text-label-sm font-semibold transition-colors ${
               isMuted
                 ? "border-[#FECACA] bg-[#FFF5F5] text-[#DC2626] hover:bg-[#FEE2E2]"
                 : "border-[#DFE5E8] bg-white text-secondary hover:text-on-surface hover:bg-[#F7F8FA]"
             }`}
           >
-            <span className="material-symbols-outlined text-[15px]">
-              {isMuted ? "mic_off" : "mic"}
-            </span>
-            <span>{isMuted ? "Unmute" : "Mute"}</span>
+            {isMuted ? "Unmute" : "Mute"}
           </button>
 
           <VoiceStatusPill
@@ -463,239 +510,209 @@ export default function VoiceAssistPanel({
         </div>
       </div>
 
-      {/* Top: AI voice assist area */}
-      <div
-        className={`relative transition-all duration-300 ${
-          mode === "voice" ? "px-4 pb-3 pt-5" : "px-4 py-3"
-        }`}
-      >
-        <button
-          type="button"
-          onClick={handleOrbClick}
-          aria-label={
-            voiceEnabled
-              ? listening
-                ? "Stop listening"
-                : "Speak to Echo"
-              : "Voice input is disabled"
-          }
-          aria-expanded={mode === "voice"}
-          className={`group relative mx-auto flex items-center justify-center rounded-full transition-all duration-300 ${
-            mode === "voice" ? "h-24 w-24" : "h-12 w-12"
-          } ${
-            listening && !isMuted
-              ? "bg-[#087F68] text-white shadow-xl shadow-[#087F68]/30 scale-105"
-              : isMuted
-              ? "bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FECACA]"
-              : voiceEnabled
-              ? "bg-[#EAF7F1] text-primary-container hover:bg-[#087F68] hover:text-white"
-              : "bg-[#F3F4F6] text-secondary/60 cursor-not-allowed"
-          }`}
+      {/*
+        Voice / manual stage — the active side takes 3/4 of the height while
+        the idle side keeps 1/4, with a smooth flex-grow transition.
+      */}
+      <div className="flex h-[470px] flex-col">
+        {/* Voice panel */}
+        <div
+          className="flex min-h-0 flex-col overflow-hidden transition-[flex-grow,background-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+          style={{ flexGrow: mode === "voice" ? 3 : 1, flexBasis: 0 }}
         >
-          {listening && !isMuted && (
-            <>
-              <span className="voice-ring-1 absolute inset-0 rounded-full bg-[#087F68]/30 animate-ping" />
-              <span className="voice-ring-2 absolute inset-0 rounded-full bg-[#78D8BD]/25" />
-            </>
-          )}
-          <span
-            className={`relative material-symbols-outlined ${
-              mode === "voice" ? "text-[38px]" : "text-[22px]"
-            }`}
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            {isMuted ? "mic_off" : listening ? "mic" : speaking ? "volume_up" : "mic"}
-          </span>
-        </button>
-
-        {mode === "voice" ? (
-          <div className="mt-3 text-center">
-            <div
-              aria-hidden="true"
-              className="mx-auto mb-2 flex h-7 items-center justify-center gap-1"
-            >
-              {[1, 2, 3, 4, 5, 6, 5, 4].map((bar, index) => (
-                <span
-                  key={index}
-                  className={`w-1 rounded-full ${
-                    listening && !isMuted ? `wave-bar-${bar} bg-[#087F68]` : "h-1.5 bg-[#CDD9D5]"
-                  }`}
-                />
-              ))}
-            </div>
-            <p className="font-label-lg text-label-lg font-semibold text-on-surface">
-              {isMuted
-                ? "Microphone is muted"
-                : stage === 3
-                ? "MatchCheck Verified · Ready for Payment"
-                : listening
-                ? "Listening hands-free… speak naturally"
-                : speaking
-                ? "Echo is speaking…"
-                : isThinking
-                ? "Thinking & evaluating…"
-                : voiceEnabled
-                ? "Tap mic to speak"
-                : "Voice is paused"}
-            </p>
-            <p className="mx-auto mt-1 max-w-[32ch] font-body-sm text-body-sm text-secondary">
-              {stage === 3
-                ? "Human authorization required. Please review details on the right and click 'Pay with PayPal'."
-                : listening && !isMuted
-                ? liveTranscript || "Auto-executes when you pause. Say 'wait' to pause, or 'thanks bye' when done."
-                : role === "seller"
-                ? "Try: “Create invoice for buyer@saypay.app for 3 items $45”"
-                : "Try: “Pay GreenLeaf coffee invoice” or “Show unpaid bills”"}
-            </p>
-            {listening && !isMuted && (
+          <div className="flex items-center gap-3.5 border-b border-[#F0F3F5] px-4 py-3.5">
+            <div className="relative flex h-[68px] w-[68px] shrink-0 items-center justify-center">
+              {isLive && (
+                <>
+                  <span className="voice-ring-1 absolute inset-2 rounded-full border border-[#087F68]/30" />
+                  <span className="voice-ring-2 absolute inset-2 rounded-full border border-[#78D8BD]/40" />
+                  <span className="voice-orbit absolute inset-0 rounded-full border-2 border-dashed border-[#78D8BD]/70" />
+                  <span className="voice-orbit-reverse absolute -inset-1 rounded-full border border-dotted border-[#087F68]/35" />
+                </>
+              )}
               <button
                 type="button"
                 onClick={handleOrbClick}
-                className="mt-2 inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-[#FECACA] bg-white px-3 py-1 font-label-sm text-label-sm font-semibold text-[#BA1A1A] hover:bg-[#FEF2F2] transition-colors"
-              >
-                <span className="material-symbols-outlined text-[15px]">stop</span>
-                Finish & Send
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="mt-2 flex items-center justify-between gap-2">
-            <p className="font-body-sm text-body-sm text-secondary">
-              Voice is minimised. Tap “Use voice” to expand.
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                if (!voiceEnabled) return;
-                setMode("voice");
-              }}
-              className="inline-flex min-h-[34px] items-center gap-1 rounded-lg border border-[#DFE5E8] bg-white px-2.5 py-1 font-label-sm text-label-sm font-semibold text-primary hover:bg-[#EAF7F1] disabled:opacity-50"
-              disabled={!voiceEnabled}
-            >
-              <span className="material-symbols-outlined text-[15px]">mic</span>
-              Use voice
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Conversation transcript */}
-      <div className="border-t border-[#F0F3F5] px-4 py-3">
-        <div
-          ref={scrollRef}
-          className="max-h-52 space-y-2.5 overflow-y-auto pr-1"
-          aria-live="polite"
-        >
-          {messages.map((message, index) => (
-            <div
-              key={`${message.role}-${index}`}
-              className={`flex animate-assist-rise ${
-                message.role === "user" ? "justify-end" : "justify-start"
-              }`}
-            >
-              <div
-                className={`max-w-[92%] rounded-xl px-3 py-2 font-body-sm text-body-sm leading-relaxed ${
-                  message.role === "user"
-                    ? "bg-[#EAF7F1] text-on-surface border border-[#A7F3D0]"
-                    : "bg-[#F7F8FA] text-on-surface border border-[#DFE5E8]"
+                aria-label={
+                  voiceEnabled
+                    ? listening
+                      ? "Stop listening"
+                      : "Speak to Echo"
+                    : "Voice input is disabled"
+                }
+                aria-pressed={listening && !isMuted}
+                className={`relative h-14 w-14 overflow-hidden rounded-full bg-white ring-2 transition-all duration-300 focus:outline-none focus-visible:ring-[#087F68] focus-visible:ring-offset-2 ${
+                  isLive
+                    ? "assist-live-avatar ring-[#78D8BD]"
+                    : isMuted
+                    ? "ring-[#FECACA] opacity-70"
+                    : voiceEnabled
+                    ? "assist-breathe ring-[#DFE5E8] hover:ring-[#78D8BD]"
+                    : "cursor-not-allowed opacity-50 grayscale ring-[#DFE5E8]"
                 }`}
               >
-                {message.role === "assistant" && (
-                  <span className="mb-1 flex items-center gap-1 font-label-sm text-[10px] uppercase tracking-wider text-primary">
-                    <span className="material-symbols-outlined text-[12px]">
-                      auto_awesome
-                    </span>
-                    Echo
-                  </span>
+                <EchoAvatar sizes="56px" />
+                <span
+                  className={`absolute bottom-0.5 right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white ${
+                    isMuted ? "bg-[#DC2626]" : isLive ? "animate-pulse bg-[#107E3E]" : "bg-[#107E3E]"
+                  }`}
+                />
+              </button>
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <p className="min-w-0 flex-1 truncate font-label-lg text-label-lg font-semibold text-on-surface">
+                  {statusTitle}
+                </p>
+                <div aria-hidden="true" className="flex h-6 shrink-0 items-center gap-[3px]">
+                  {[10, 16, 22, 14, 20, 12, 18].map((height, index) => (
+                    <span
+                      key={index}
+                      className={`w-1 rounded-full transition-colors duration-300 ${
+                        isLive
+                          ? `voice-live-bar ${isThinking ? "bg-[#C08A2E]" : "bg-[#087F68]"}`
+                          : "bg-[#CDD9D5]"
+                      }`}
+                      style={{
+                        height: `${height}px`,
+                        animationDelay: `${index * 0.09}s`,
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+              <p className="mt-1 line-clamp-2 font-body-sm text-body-sm text-secondary">
+                {listening && !isMuted && liveTranscript ? (
+                  <>
+                    {liveTranscript}
+                    <span className="animate-caret text-primary">|</span>
+                  </>
+                ) : (
+                  statusHint
                 )}
-                {message.text}
-              </div>
+              </p>
+              {listening && !isMuted && (
+                <button
+                  type="button"
+                  onClick={handleOrbClick}
+                  className="mt-2 inline-flex min-h-[30px] items-center gap-1 rounded-lg border border-[#A7F3D0] bg-white px-2.5 py-0.5 font-label-sm text-label-sm font-semibold text-[#BA1A1A] hover:bg-[#FEF2F2] transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[14px]">stop</span>
+                  Finish &amp; Send
+                </button>
+              )}
             </div>
-          ))}
-          {isThinking && (
-            <div className="flex justify-start">
-              <div className="rounded-xl px-3 py-2 bg-[#F7F8FA] text-secondary border border-[#DFE5E8] text-xs flex items-center gap-2">
-                <span className="material-symbols-outlined text-[14px] animate-spin text-primary">
-                  progress_activity
-                </span>
-                Evaluating safety rules…
+          </div>
+
+          {/* Expanded voice content — hidden when the panel collapses to 1/4 */}
+          {mode === "voice" && (
+            <>
+              <div
+                ref={scrollRef}
+                className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-4 py-3"
+                aria-live="polite"
+              >
+                {messages.map((message, index) => (
+                  <div
+                    key={`${message.role}-${index}`}
+                    className={`flex animate-assist-rise ${
+                      message.role === "user" ? "justify-end" : "justify-start"
+                    }`}
+                  >
+                    <div
+                      className={`max-w-[92%] rounded-xl px-3 py-2 font-body-sm text-body-sm leading-relaxed ${
+                        message.role === "user"
+                          ? "bg-[#EAF7F1] text-on-surface border border-[#A7F3D0]"
+                          : "bg-[#F7F8FA] text-on-surface border border-[#DFE5E8]"
+                      }`}
+                    >
+                      {message.role === "assistant" && (
+                        <span className="mb-1 flex items-center gap-1 font-label-sm text-[10px] uppercase tracking-wider text-primary">
+                          <span className="material-symbols-outlined text-[12px]">
+                            auto_awesome
+                          </span>
+                          Echo
+                        </span>
+                      )}
+                      {message.text}
+                    </div>
+                  </div>
+                ))}
+                {isThinking && (
+                  <div className="flex justify-start">
+                    <div className="flex items-center gap-2 rounded-xl border border-[#DFE5E8] bg-[#F7F8FA] px-3 py-2 text-xs text-secondary">
+                      <span className="material-symbols-outlined animate-spin text-[14px] text-primary">
+                        progress_activity
+                      </span>
+                      Evaluating safety rules…
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
+
+              {visibleSuggestions.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 border-t border-[#F0F3F5] px-4 py-2.5">
+                  {visibleSuggestions.map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      onClick={() =>
+                        handleUserText(suggestion, voiceEnabled && !isMuted && mode === "voice")
+                      }
+                      className="rounded-full border border-[#DFE5E8] bg-white px-2.5 py-1 text-left font-label-sm text-label-sm text-secondary transition-colors hover:border-[#A7F3D0] hover:bg-[#EAF7F1] hover:text-primary"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
-      </div>
 
-      {/* Suggestions */}
-      {suggestions.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 border-t border-[#F0F3F5] px-4 py-2.5">
-          {suggestions.map((suggestion) => (
-            <button
-              key={suggestion}
-              type="button"
-              onClick={() => handleUserText(suggestion, mode === "voice")}
-              className="rounded-full border border-[#DFE5E8] bg-white px-2.5 py-1 font-label-sm text-label-sm text-secondary hover:border-[#A7F3D0] hover:bg-[#EAF7F1] hover:text-primary transition-colors text-left"
-            >
-              {suggestion}
-            </button>
-          ))}
-        </div>
-      )}
+        {/* Manual entry panel — expands to 3/4 when the input is focused */}
+        <div
+          className="flex min-h-0 flex-col border-t border-[#DFE5E8] bg-[#F7F8FA] p-3 transition-[flex-grow,background-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+          style={{ flexGrow: mode === "manual" ? 3 : 1, flexBasis: 0 }}
+        >
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <span className="font-label-sm text-label-sm font-semibold uppercase tracking-wider text-secondary">
+              Manual entry
+            </span>
+            <span className="truncate font-body-sm text-[11px] text-secondary">
+              Enter sends · Shift+Enter adds a line
+            </span>
+          </div>
 
-      {/* Bottom: manual entry */}
-      <div className="border-t border-[#DFE5E8] bg-[#F7F8FA] p-3">
-        <div className="mb-2 flex items-center justify-between">
-          <span className="font-label-sm text-label-sm font-semibold uppercase tracking-wider text-secondary">
-            Manual entry
-          </span>
-          <button
-            type="button"
-            onClick={focusManual}
-            className={`inline-flex items-center gap-1 font-label-sm text-label-sm font-semibold ${
-              mode === "manual" ? "text-primary" : "text-secondary hover:text-primary"
-            }`}
-          >
-            <span className="material-symbols-outlined text-[14px]">keyboard</span>
-            {mode === "manual" ? "Typing…" : "Type instead"}
-          </button>
-        </div>
-
-        {mode === "manual" ? (
-          <div className="animate-assist-rise">
+          <div className="relative min-h-0 flex-1">
             <textarea
               ref={inputRef}
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              onFocus={() => setMode("manual")}
+              onFocus={handleManualFocus}
               onKeyDown={handleKeyDown}
-              rows={2}
-              placeholder={role === "seller" ? "Create invoice for buyer@saypay.app for $45..." : "Type your payment intent or request..."}
-              className="w-full resize-none rounded-[10px] border border-[#DFE5E8] bg-white p-2.5 font-body-md text-body-md text-on-surface outline-none transition-all focus:border-primary-container focus:ring-2 focus:ring-[#EAF7F1]"
+              rows={1}
+              aria-label={role === "seller" ? "Type an invoice instruction" : "Type a payment request"}
+              placeholder={
+                role === "seller"
+                  ? "Create invoice for buyer@saypay.app for $45..."
+                  : "Type your payment intent or request..."
+              }
+              className="h-full min-h-[44px] w-full resize-none rounded-[10px] border border-[#DFE5E8] bg-white py-2.5 pl-2.5 pr-24 font-body-md text-body-md text-on-surface outline-none transition-all focus:border-primary-container focus:ring-2 focus:ring-[#EAF7F1]"
             />
-            <div className="mt-2 flex items-center justify-between gap-2">
-              <span className="font-body-sm text-[11px] text-secondary">
-                Press Enter to send
-              </span>
-              <button
-                type="button"
-                onClick={handleSend}
-                disabled={!input.trim()}
-                className="inline-flex min-h-[34px] items-center gap-1.5 rounded-lg bg-primary-container px-3 py-1 font-label-md text-label-md font-semibold text-white hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Send
-                <span className="material-symbols-outlined text-[16px]">send</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleSend}
+              disabled={!input.trim()}
+              aria-label="Send message"
+              className="absolute bottom-2 right-2 inline-flex h-[32px] items-center gap-1.5 rounded-lg bg-primary-container px-3 font-label-md text-label-md font-semibold text-white hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Send
+              <span className="material-symbols-outlined text-[15px]">send</span>
+            </button>
           </div>
-        ) : (
-          <button
-            type="button"
-            onClick={focusManual}
-            className="flex min-h-[40px] w-full items-center gap-2 rounded-[10px] border border-[#DFE5E8] bg-white px-3 py-2 text-left font-body-sm text-body-sm text-secondary hover:border-[#A7F3D0] hover:text-on-surface transition-colors"
-          >
-            <span className="material-symbols-outlined text-[18px]">keyboard</span>
-            {role === "seller" ? "Type invoice instruction…" : "Type a payment request…"}
-          </button>
-        )}
+        </div>
       </div>
     </section>
   );

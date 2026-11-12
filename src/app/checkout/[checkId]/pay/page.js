@@ -4,6 +4,7 @@ import React, { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import FlowPageLayout from "../../../../components/flow/FlowPageLayout.js";
 import VoiceAssistPanel from "../../../../components/flow/VoiceAssistPanel.js";
+import EchoAvatar from "../../../../components/EchoAvatar.js";
 import { ExpiryTimer } from "../../../../components/flow/CheckoutSummary.js";
 import { DEMO_PAYMENT } from "../../../../lib/demoFlowData.js";
 import { CheckoutSkeleton } from "../../../../components/ui/LoadingSkeletons.js";
@@ -240,8 +241,9 @@ function PaypalSandbox({ params, onOpenAuditLog }) {
           <section className="rounded-2xl border border-[#DFE5E8] bg-surface-container-lowest p-4 shadow-sm sm:p-5">
             <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-2">
-                <span className="material-symbols-outlined text-[18px] text-secondary">
-                  mic_off
+                <span className="relative mt-0.5 h-[18px] w-[18px] shrink-0 overflow-hidden rounded-full opacity-60 grayscale ring-1 ring-[#DFE5E8]">
+                  <EchoAvatar sizes="18px" />
+                  <span className="absolute bottom-0 right-0 h-1.5 w-1.5 rounded-full bg-[#DC2626]" />
                 </span>
                 <p className="font-body-sm text-body-sm text-secondary">
                   Mic is off while PayPal is open. Voice cannot approve the payment.
