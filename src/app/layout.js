@@ -6,6 +6,13 @@ export const metadata = {
   title: "SayPay — Voice-First Payment Safety Companion",
   description:
     "Say it. Check it. Pay with confidence. AI-powered two-source payment verification with PayPal Sandbox.",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/icon.svg",
+    apple: "/saypay-logo.jpg",
+  },
 };
 
 export const viewport = {

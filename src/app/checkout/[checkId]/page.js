@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import FlowPageLayout from "../../../components/flow/FlowPageLayout.js";
 import VoiceAssistPanel from "../../../components/flow/VoiceAssistPanel.js";
+import EchoAvatar from "../../../components/EchoAvatar.js";
 import {
   CheckoutSummary,
   ExpiryTimer,
@@ -118,8 +119,9 @@ function CheckoutReview({ params, onOpenAuditLog }) {
             ))}
           </ul>
           <div className="mt-3 flex items-start gap-2 rounded-xl border border-[#DFE5E8] bg-[#F7F8FA] p-3">
-            <span className="material-symbols-outlined text-[18px] text-secondary">
-              mic_off
+            <span className="relative mt-0.5 h-[18px] w-[18px] shrink-0 overflow-hidden rounded-full opacity-60 grayscale ring-1 ring-[#DFE5E8]">
+              <EchoAvatar sizes="18px" />
+              <span className="absolute bottom-0 right-0 h-1.5 w-1.5 rounded-full bg-[#DC2626]" />
             </span>
             <p className="font-body-sm text-body-sm text-secondary">
               Voice commands are not active on this page. Only buttons move the payment forward.

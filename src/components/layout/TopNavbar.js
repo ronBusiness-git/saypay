@@ -15,7 +15,8 @@ export default function TopNavbar() {
   const isHistory =
     pathname.startsWith("/history") ||
     pathname.startsWith("/transactions") ||
-    pathname.startsWith("/checks");
+    pathname.startsWith("/checks") ||
+    pathname.startsWith("/receipt");
 
   const handleLogout = async () => {
     setIsLoggingOut(true);

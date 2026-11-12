@@ -101,7 +101,10 @@ export async function GET(request) {
               : "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]",
             icon: isPaid ? "check_circle" : "dot",
           },
-          action: { href: `/new-check`, label: isPaid ? "View Receipt" : "Manage" },
+          action: {
+            href: `/receipt/${encodeURIComponent(inv.transactionId || inv.invoiceId)}`,
+            label: "Receipt",
+          },
         };
       });
 
@@ -192,12 +195,19 @@ export async function GET(request) {
       .limit(10)
       .lean();
 
+    const checkIds = latestChecks.map((c) => c.checkId).filter(Boolean);
+    const matchingTxs = checkIds.length
+      ? await Transaction.find({ checkId: { $in: checkIds } }).lean()
+      : [];
+    const txByCheckId = new Map(matchingTxs.map((tx) => [tx.checkId, tx]));
+
     const recent = latestChecks.map((c) => {
       const counterparty =
         c.intent?.recipientName || c.request?.recipientName || "GreenLeaf Demo Store";
       const amt = c.intent?.amount || c.request?.amount || "12.50";
       const curr = c.intent?.currency || c.request?.currency || "USD";
       const ref = c.intent?.reference || c.request?.reference || c.invoiceId || "GL-1042";
+      const tx = txByCheckId.get(c.checkId);
 
       const dateObj = new Date(c.createdAt || Date.now());
       const dateStr = dateObj.toLocaleDateString("en-GB", {
@@ -212,6 +222,11 @@ export async function GET(request) {
 
       const isClear = c.status === "CLEAR";
       const isReview = c.status === "REVIEW";
+      const isBlocked = c.status === "BLOCKED";
+
+      const paymentStatus = tx?.paymentStatus || (isClear ? "APPROVED" : isBlocked ? "BLOCKED" : "PENDING");
+      const isPaidOrApproved = paymentStatus === "COMPLETED" || paymentStatus === "APPROVED";
+      const isFailedOrBlocked = paymentStatus === "FAILED" || paymentStatus === "BLOCKED" || paymentStatus === "CANCELLED";
 
       return {
         id: c.checkId,
@@ -234,13 +249,18 @@ export async function GET(request) {
           icon: isClear ? "check_circle" : isReview ? "warning" : "block",
         },
         payment: {
-          label: isClear ? "APPROVED" : "PENDING",
-          className: isClear
+          label: paymentStatus,
+          className: isPaidOrApproved
             ? "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]"
-            : "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]",
-          icon: isClear ? "check_circle" : "dot",
+            : isFailedOrBlocked
+            ? "bg-[#FEE2E2] text-[#DC2626] border-[#FECACA]"
+            : "bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]",
+          icon: isPaidOrApproved ? "check_circle" : isFailedOrBlocked ? "block" : "dot",
         },
-        action: { href: `/new-check`, label: "Review & Pay" },
+        action: {
+          href: `/receipt/${encodeURIComponent(tx?.transactionId || c.checkId)}`,
+          label: "Receipt",
+        },
       };
     });
 

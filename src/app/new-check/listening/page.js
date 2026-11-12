@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import FlowPageLayout from "../../../components/flow/FlowPageLayout.js";
 import VoiceAssistPanel from "../../../components/flow/VoiceAssistPanel.js";
+import EchoAvatar from "../../../components/EchoAvatar.js";
 import { DEMO_PAYMENT } from "../../../lib/demoFlowData.js";
 
 const WORDS = DEMO_PAYMENT.voiceTranscript.split(" ");
@@ -68,7 +69,7 @@ export default function NewCheckListeningPage({ onOpenAuditLog }) {
             }`}
           >
             <span className="material-symbols-outlined text-[13px]">
-              {listening ? "mic" : "check_circle"}
+              {listening ? "hearing" : "check_circle"}
             </span>
             {listening ? "Listening · up to 8s" : "Transcript captured"}
           </span>
@@ -112,18 +113,13 @@ export default function NewCheckListeningPage({ onOpenAuditLog }) {
                 </>
               )}
               <span
-                className={`relative flex h-16 w-16 items-center justify-center rounded-full ${
+                className={`relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full ring-2 transition-all duration-300 ${
                   listening
-                    ? "bg-primary-container text-white shadow-lg shadow-primary/20"
-                    : "bg-[#EAF7F1] text-primary-container"
+                    ? "assist-live-avatar ring-[#087F68]/40 shadow-lg shadow-primary/20"
+                    : "assist-breathe bg-[#EAF7F1] ring-[#DFE5E8]"
                 }`}
               >
-                <span
-                  className="material-symbols-outlined text-[30px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  {listening ? "mic" : "graphic_eq"}
-                </span>
+                <EchoAvatar sizes="64px" />
               </span>
             </div>
 

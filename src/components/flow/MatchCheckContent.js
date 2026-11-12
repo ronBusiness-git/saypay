@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import EchoAvatar from "../EchoAvatar.js";
 import { TONE } from "../../lib/demoFlowData.js";
 
 const RESULT_STYLES = {
@@ -46,7 +47,9 @@ function ReadAloudButton({ text, tone }) {
       onClick={speak}
       className={`inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-[10px] border bg-white px-3 py-2 font-label-md text-label-md font-semibold transition-colors hover:bg-white/70 ${tone.text} ${tone.border}`}
     >
-      <span className="material-symbols-outlined text-[18px]">volume_up</span>
+      <span className={`h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ${tone.border}`}>
+        <EchoAvatar sizes="20px" />
+      </span>
       Read aloud
     </button>
   );

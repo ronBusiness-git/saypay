@@ -29,7 +29,7 @@ const RECOVERY = [
   {
     title: "Record your intent again",
     detail: "Speak the payment intent one more time with the invoice reference.",
-    icon: "mic",
+    icon: "replay",
     href: "/new-check/listening",
     primary: false,
   },
