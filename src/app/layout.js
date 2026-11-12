@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import "./globals.css";
 import AppShell from "../components/layout/AppShell.js";
 
@@ -16,7 +17,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className="antialiased selection:bg-surface-container selection:text-primary">
-        <AppShell>{children}</AppShell>
+        <Suspense fallback={<div className="min-h-screen bg-[#F8FAFC]" />}>
+          <AppShell>{children}</AppShell>
+        </Suspense>
       </body>
     </html>
   );

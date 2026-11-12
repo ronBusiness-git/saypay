@@ -8,6 +8,11 @@ const PaymentCheckSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
+    invoiceId: {
+      type: String,
+      default: null,
+      index: true,
+    },
     workspaceId: {
       type: String,
       default: "demo-workspace",
