@@ -77,12 +77,17 @@ export async function POST(request) {
     transaction.paypalStatus = paypalStatus;
     await transaction.save();
 
-    // 5. If this check is linked to an invoice, mark the invoice as PAID
+    // 5. If this check is linked to invoice(s), mark them as PAID
     try {
       const paymentCheck = await PaymentCheck.findOne({ checkId });
       if (paymentCheck?.invoiceId) {
-        await Invoice.findOneAndUpdate(
-          { invoiceId: paymentCheck.invoiceId },
+        const ids = paymentCheck.invoiceId
+          .split(/[,;\s]+/)
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        await Invoice.updateMany(
+          { invoiceId: { $in: ids } },
           {
             $set: {
               status: "PAID",

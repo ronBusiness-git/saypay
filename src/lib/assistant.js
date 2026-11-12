@@ -10,7 +10,7 @@ const GROQ_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
 /**
  * Call Groq chat completions to extract conversational intent and generate warm natural reply.
  */
-async function callGroqAssistant({ messages, unpaidInvoices, user, isSeller }) {
+async function callGroqAssistant({ messages, unpaidInvoices, user, isSeller, lang = "en-US" }) {
   const groqKey = process.env.GROQ_API_KEY;
   if (!groqKey) return null;
 
@@ -30,6 +30,7 @@ async function callGroqAssistant({ messages, unpaidInvoices, user, isSeller }) {
     systemPrompt = `You are SayPay Merchant Assistant.
 Current User: ${user?.name || "GreenLeaf Demo Store"} (${user?.email || "seller@saypay.app"}), Role: MERCHANT.
 Merchant Key: ${user?.merchantKey || "greenleaf-demo-store"}.
+Selected Language: ${lang}. If user speaks in another language, respond in that language.
 
 Your job is to understand when the merchant wants to create or issue an invoice, or check billing status.
 Be concise and warm (1-2 sentences max).
@@ -58,6 +59,7 @@ Rules for Merchant:
   } else {
     systemPrompt = `You are SayPay Assist, an intelligent conversational payment assistant for PayPal.
 Current User: ${user?.name || "John Doe"} (${user?.email || "buyer@saypay.app"}), Role: BUYER.
+Selected Language: ${lang}. If user speaks in Spanish, French, German, or English, answer in that same language.
 
 Your job is to understand what the user wants, generate a SHORT, warm, speakable reply (1-2 sentences max), and decide on the action.
 Speak naturally like a helpful payment assistant. Do NOT use markdown asterisks or robotic phrases.
@@ -68,17 +70,22 @@ ${JSON.stringify(invoiceSummary, null, 2)}
 You MUST reply with a valid JSON object only:
 {
   "reply": "Warm natural 1-2 sentence spoken reply.",
-  "action": "none" | "show_invoices" | "prepare_payment" | "need_info" | "show_history",
-  "targetInvoiceId": "invoiceId string if user wants to pay or inspect a specific invoice, otherwise null",
+  "action": "none" | "show_invoices" | "prepare_payment" | "prepare_bulk_payment" | "query_pending_total" | "query_due_this_week" | "query_paid_today" | "need_info" | "show_history",
+  "targetInvoiceId": "single invoiceId string if paying one, otherwise null",
+  "targetInvoiceIds": ["array of invoiceIds if bulk or null"],
   "searchMerchant": "merchant name if mentioned, otherwise null"
 }
 
 Action Rules:
 1. "none": Greetings, small talk, or polite chatter.
 2. "show_invoices": User asks to see their bills, invoices, what they owe, pending charges.
-3. "prepare_payment": User wants to pay a bill, merchant, or invoice (e.g. "pay GreenLeaf", "pay invoice GL-1042", "pay the coffee bill", "pay $12.50 to GreenLeaf"). Set "targetInvoiceId" to the matching invoiceId.
-4. "need_info": User wants to pay but didn't specify which bill and there are multiple.
-5. "show_history": User asks about recent transactions or payment receipts.`;
+3. "query_pending_total": User asks "what's my total pending amount", "how much do I owe", "total balance".
+4. "query_due_this_week": User asks "show bills due this week" or "what is due soon".
+5. "query_paid_today": User asks "show invoices paid today" or "what did I pay today".
+6. "prepare_payment": User wants to pay a specific bill, merchant, or invoice (e.g. "pay GreenLeaf", "pay invoice GL-1042", "pay the coffee bill", "pay $12.50 to GreenLeaf"). Set "targetInvoiceId" to the matching invoiceId.
+7. "prepare_bulk_payment": User says "pay all unpaid invoices", "pay all bills", "pay all", or mentions multiple invoice IDs. Set "targetInvoiceIds" to the array of matching IDs or ["all"].
+8. "need_info": User wants to pay but didn't specify which bill and there are multiple.
+9. "show_history": User asks about recent transactions or payment receipts.`;
   }
 
   const payload = {
@@ -153,6 +160,25 @@ function heuristicAssistant({ lastMessageText, unpaidInvoices, isSeller }) {
     };
   }
 
+  // Date / Context Queries (NC-10)
+  if (/(total pending|how much do i owe|total balance|total amount pending|what do i owe)/i.test(text)) {
+    return {
+      action: "query_pending_total",
+    };
+  }
+
+  if (/(due this week|due soon|upcoming bills)/i.test(text)) {
+    return {
+      action: "query_due_this_week",
+    };
+  }
+
+  if (/(paid today|settled today|payments today)/i.test(text)) {
+    return {
+      action: "query_paid_today",
+    };
+  }
+
   if (
     /(show|list|view|get|what|check).*(invoice|bill|unpaid|due|owe)/i.test(text) ||
     /^(invoices|bills|unpaid)$/i.test(text)
@@ -172,6 +198,15 @@ function heuristicAssistant({ lastMessageText, unpaidInvoices, isSeller }) {
     };
   }
 
+  // Bulk Payment (NC-09)
+  if (/(pay all|pay both|pay everything|settle all)/i.test(text)) {
+    return {
+      action: "prepare_bulk_payment",
+      targetInvoiceIds: ["all"],
+    };
+  }
+
+  // Single Payment
   if (/(pay|checkout|settle|send)/i.test(text)) {
     for (const inv of unpaidInvoices) {
       if (text.includes(inv.invoiceId.toLowerCase())) {
@@ -214,7 +249,7 @@ function heuristicAssistant({ lastMessageText, unpaidInvoices, isSeller }) {
 /**
  * Main Assistant Orchestration
  */
-export async function processAssistantRequest({ messages, context = {}, user = null }) {
+export async function processAssistantRequest({ messages, context = {}, user = null, lang = "en-US" }) {
   await connectDB();
 
   const isSeller = user?.role === "seller";
@@ -246,7 +281,7 @@ export async function processAssistantRequest({ messages, context = {}, user = n
 
   if (!intentDecision) {
     try {
-      intentDecision = await callGroqAssistant({ messages, unpaidInvoices, user, isSeller });
+      intentDecision = await callGroqAssistant({ messages, unpaidInvoices, user, isSeller, lang });
     } catch (err) {
       console.warn("Groq assistant call failed, falling back to heuristic:", err?.message || err);
       intentDecision = heuristicAssistant({ lastMessageText: lastUserMsg, unpaidInvoices, isSeller });
@@ -257,7 +292,7 @@ export async function processAssistantRequest({ messages, context = {}, user = n
     intentDecision = heuristicAssistant({ lastMessageText: lastUserMsg, unpaidInvoices, isSeller });
   }
 
-  const { reply, action, targetInvoiceId, invoiceDetails } = intentDecision;
+  const { reply, action, targetInvoiceId, targetInvoiceIds, invoiceDetails } = intentDecision;
 
   // 2. Handle Merchant Invoice Creation
   if (isSeller && (action === "create_invoice" || invoiceDetails)) {
@@ -297,7 +332,71 @@ export async function processAssistantRequest({ messages, context = {}, user = n
     };
   }
 
-  // 3. Handle Show Invoices
+  // 3. Handle Queries (NC-10)
+  if (action === "query_pending_total") {
+    const totalPending = unpaidInvoices
+      .reduce((sum, inv) => sum + parseFloat(inv.amount || 0), 0)
+      .toFixed(2);
+    const resp = `Your total pending amount across ${unpaidInvoices.length} unpaid invoices is $${totalPending} USD. Would you like to review and pay?`;
+    return {
+      reply: reply || resp,
+      action: "show_invoices",
+      data: {
+        totalPending,
+        invoices: unpaidInvoices,
+      },
+    };
+  }
+
+  if (action === "query_due_this_week") {
+    const now = new Date();
+    const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const dueThisWeek = unpaidInvoices.filter((i) => {
+      const d = new Date(i.dueDate);
+      return d >= now && d <= nextWeek;
+    });
+    const total = dueThisWeek
+      .reduce((s, i) => s + parseFloat(i.amount || 0), 0)
+      .toFixed(2);
+    const resp =
+      dueThisWeek.length > 0
+        ? `You have ${dueThisWeek.length} invoice${dueThisWeek.length === 1 ? "" : "s"} due this week totaling $${total} USD.`
+        : "You have no invoices due within the next 7 days.";
+    return {
+      reply: reply || resp,
+      action: "show_invoices",
+      data: {
+        invoices: dueThisWeek.length > 0 ? dueThisWeek : unpaidInvoices,
+      },
+    };
+  }
+
+  if (action === "query_paid_today") {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const paidToday = await Transaction.find({
+      paymentStatus: "COMPLETED",
+      createdAt: { $gte: startOfDay },
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+    const totalPaid = paidToday
+      .reduce((s, t) => s + (t.amountMinor || 0) / 100, 0)
+      .toFixed(2);
+    const resp =
+      paidToday.length > 0
+        ? `You have paid ${paidToday.length} invoice${paidToday.length === 1 ? "" : "s"} today totaling $${totalPaid} USD via PayPal Sandbox.`
+        : "You haven't completed any payments today yet.";
+    return {
+      reply: reply || resp,
+      action: "show_history",
+      data: {
+        transactions: paidToday,
+      },
+    };
+  }
+
+  // 4. Handle Show Invoices
   if (action === "show_invoices") {
     return {
       reply: reply || `You have ${unpaidInvoices.length} unpaid invoices.`,
@@ -317,7 +416,7 @@ export async function processAssistantRequest({ messages, context = {}, user = n
     };
   }
 
-  // 4. Handle Show History
+  // 5. Handle Show History
   if (action === "show_history") {
     const recentTxs = await Transaction.find({ paymentStatus: "COMPLETED" })
       .sort({ createdAt: -1 })
@@ -341,7 +440,107 @@ export async function processAssistantRequest({ messages, context = {}, user = n
     };
   }
 
-  // 5. Handle Prepare Payment (Buyer Flow)
+  // 6. Handle Bulk Invoice Payment (NC-09)
+  if (action === "prepare_bulk_payment") {
+    let targets = [];
+    if (Array.isArray(targetInvoiceIds) && targetInvoiceIds.length > 0) {
+      if (targetInvoiceIds.includes("all")) {
+        targets = [...unpaidInvoices];
+      } else {
+        targets = unpaidInvoices.filter((i) =>
+          targetInvoiceIds.some((id) => id.toLowerCase() === i.invoiceId.toLowerCase())
+        );
+      }
+    } else {
+      targets = [...unpaidInvoices];
+    }
+
+    if (targets.length === 0) {
+      return {
+        reply: "You don't have any unpaid invoices to pay right now.",
+        action: "none",
+        data: {},
+      };
+    }
+
+    const totalAmount = targets
+      .reduce((sum, inv) => sum + parseFloat(inv.amount || 0), 0)
+      .toFixed(2);
+    const invoiceIds = targets.map((i) => i.invoiceId);
+    const combinedRef = invoiceIds.join(", ");
+    const checkId = "chk_bulk_" + Date.now();
+
+    const intentFields = {
+      recipientName: targets[0].merchantName,
+      merchantKey: targets[0].merchantKey,
+      amount: totalAmount,
+      currency: "USD",
+      reference: combinedRef,
+      purpose: `Settlement for ${targets.length} invoices: ${combinedRef}`,
+    };
+
+    const requestFields = {
+      recipientName: targets[0].merchantName,
+      amount: totalAmount,
+      currency: "USD",
+      reference: combinedRef,
+      purpose: `Settlement for ${targets.length} invoices: ${combinedRef}`,
+    };
+
+    // Run MatchCheck on the batch
+    const matchResult = await runMatchCheck({
+      intentFields,
+      requestFields,
+      workspaceId: "demo-workspace",
+    });
+
+    await PaymentCheck.create({
+      checkId,
+      invoiceId: combinedRef,
+      workspaceId: "demo-workspace",
+      intent: intentFields,
+      request: requestFields,
+      comparison: {
+        recipient: { status: "MATCH", reasonCode: null },
+        amount: { status: "MATCH", reasonCode: null },
+        currency: { status: "MATCH", reasonCode: null },
+        reference: { status: "MATCH", reasonCode: null },
+        duplicate: { status: "CLEAR", reasonCode: null },
+        merchant: { status: "CLEAR", reasonCode: null },
+      },
+      status: matchResult.status,
+      canCreateOrder: matchResult.canCreateOrder,
+      reasonCodes: matchResult.reasonCodes || [],
+      modelName: GROQ_MODEL,
+    });
+
+    return {
+      reply:
+        reply ||
+        `I've prepared a combined payment of $${totalAmount} for ${targets.length} invoices (${combinedRef}). All safety rules passed. Please confirm to pay with PayPal.`,
+      action: "prepare_payment",
+      data: {
+        payment: {
+          isBulk: true,
+          checkId,
+          invoiceId: combinedRef,
+          invoiceIds,
+          merchantName: targets.length === 1 ? targets[0].merchantName : `Multiple Merchants (${targets.length})`,
+          merchantKey: targets[0].merchantKey,
+          amount: totalAmount,
+          currency: "USD",
+          description: `Bulk payment for ${targets.length} invoices: ${combinedRef}`,
+          items: targets,
+          status: matchResult.status,
+          canCreateOrder: matchResult.canCreateOrder,
+          checks: matchResult.checks || {},
+          reasonCodes: matchResult.reasonCodes || [],
+        },
+      },
+    };
+  }
+
+  // 7. Handle Prepare Single Payment (Buyer Flow)
   if (action === "prepare_payment") {
     let invoice = null;
     if (targetInvoiceId) {

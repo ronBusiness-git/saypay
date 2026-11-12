@@ -5,7 +5,7 @@ import { getSessionUser } from "@/lib/session.js";
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { messages = [], context = {} } = body || {};
+    const { messages = [], context = {}, lang = "en-US" } = body || {};
 
     const user = getSessionUser(request);
 
@@ -13,6 +13,7 @@ export async function POST(request) {
       messages,
       context,
       user,
+      lang,
     });
 
     return NextResponse.json(result);

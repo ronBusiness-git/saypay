@@ -65,16 +65,28 @@ export async function GET(request) {
 
       const recent = merchantInvoices.slice(0, 10).map((inv) => {
         const isPaid = inv.status === "PAID";
+        const dateObj = new Date(inv.createdAt || Date.now());
+        const dateStr = dateObj.toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        });
+        const timeStr = dateObj.toLocaleTimeString("en-GB", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
         return {
           id: inv.invoiceId,
-          timestamp: new Date(inv.createdAt).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          counterparty: inv.buyerEmail,
-          amount: `$${parseFloat(inv.amount).toFixed(2)} ${inv.currency}`,
+          sortDate: inv.createdAt,
+          date: dateStr,
+          time: `${timeStr} UTC`,
+          merchant: inv.merchantName || "GreenLeaf Demo Store",
+          merchantId: `ID: ${inv.buyerEmail}`,
+          initials: (inv.merchantName || "GL").slice(0, 2).toUpperCase(),
+          initialsStyle: "bg-[#EAF7F1] text-primary border-[#A7F3D0]",
+          reference: `ref: ${inv.invoiceId}`,
+          amount: `${inv.currency || "USD"} ${parseFloat(inv.amount).toFixed(2)}`,
           matchCheck: {
             label: isPaid ? "SETTLED" : "PENDING",
             className: isPaid
@@ -89,7 +101,7 @@ export async function GET(request) {
               : "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]",
             icon: isPaid ? "check_circle" : "dot",
           },
-          action: { href: `/new-check`, label: "Manage" },
+          action: { href: `/new-check`, label: isPaid ? "View Receipt" : "Manage" },
         };
       });
 
@@ -184,9 +196,16 @@ export async function GET(request) {
       const counterparty =
         c.intent?.recipientName || c.request?.recipientName || "GreenLeaf Demo Store";
       const amt = c.intent?.amount || c.request?.amount || "12.50";
-      const formattedDate = new Date(c.createdAt).toLocaleDateString("en-US", {
-        month: "short",
+      const curr = c.intent?.currency || c.request?.currency || "USD";
+      const ref = c.intent?.reference || c.request?.reference || c.invoiceId || "GL-1042";
+
+      const dateObj = new Date(c.createdAt || Date.now());
+      const dateStr = dateObj.toLocaleDateString("en-GB", {
         day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+      const timeStr = dateObj.toLocaleTimeString("en-GB", {
         hour: "2-digit",
         minute: "2-digit",
       });
@@ -195,10 +214,16 @@ export async function GET(request) {
       const isReview = c.status === "REVIEW";
 
       return {
-        id: c.checkId.slice(0, 12),
-        timestamp: formattedDate,
-        counterparty,
-        amount: `$${parseFloat(amt).toFixed(2)}`,
+        id: c.checkId,
+        sortDate: c.createdAt,
+        date: dateStr,
+        time: `${timeStr} UTC`,
+        merchant: counterparty,
+        merchantId: `ID: ${c.checkId.slice(0, 8)}`,
+        initials: counterparty.slice(0, 2).toUpperCase(),
+        initialsStyle: "bg-[#EAF7F1] text-primary border-[#A7F3D0]",
+        reference: `ref: ${ref}`,
+        amount: `${curr} ${parseFloat(amt).toFixed(2)}`,
         matchCheck: {
           label: c.status,
           className: isClear
@@ -215,7 +240,7 @@ export async function GET(request) {
             : "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]",
           icon: isClear ? "check_circle" : "dot",
         },
-        action: { href: `/new-check`, label: "Pay" },
+        action: { href: `/new-check`, label: "Review & Pay" },
       };
     });
 

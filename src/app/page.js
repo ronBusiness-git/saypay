@@ -5,9 +5,14 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import ChecksBarChart from "../components/dashboard/ChecksBarChart.js";
 import ChecksLineChart from "../components/dashboard/ChecksLineChart.js";
-import AssistantLiveCard from "../components/dashboard/AssistantLiveCard.js";
-import { GridTableSkeleton } from "../components/ui/LoadingSkeletons.js";
-import LoadingScreen from "../components/ui/LoadingScreen.js";
+import VoiceAssistPanel from "../components/flow/VoiceAssistPanel.js";
+import { useRouter } from "next/navigation";
+import {
+  PageHeaderSkeleton,
+  SummaryCardsSkeleton,
+  ChartCardSkeleton,
+  GridTableSkeleton,
+} from "../components/ui/LoadingSkeletons.js";
 import { useDemoSession } from "../lib/demoAuth.js";
 
 const SayPayGrid = dynamic(
@@ -19,6 +24,7 @@ const SayPayGrid = dynamic(
 );
 
 export default function DashboardPage() {
+  const router = useRouter();
   const session = useDemoSession();
   const isSeller = session?.role === "seller";
 
@@ -58,7 +64,17 @@ export default function DashboardPage() {
   }, [session?.role]);
 
   if (loading) {
-    return <LoadingScreen message="Loading dashboard" subtext="Fetching live records from MongoDB" />;
+    return (
+      <main className="flex-grow w-full max-w-[1280px] mx-auto px-4 md:px-margin-desktop py-8 md:py-space-xl space-y-6">
+        <PageHeaderSkeleton withActions withEyebrow />
+        <SummaryCardsSkeleton count={5} />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <ChartCardSkeleton variant="bar" />
+          <ChartCardSkeleton variant="line" />
+        </div>
+        <GridTableSkeleton rows={6} label="Loading recent activity…" />
+      </main>
+    );
   }
 
   const totals = stats?.totals || {};
@@ -243,7 +259,7 @@ export default function DashboardPage() {
 
             <div className="p-1.5 sm:p-2.5">
               <SayPayGrid
-                variant="dashboard"
+                variant="history"
                 rowData={stats?.recent || []}
                 ariaLabel="Recent dashboard checks"
               />
@@ -264,9 +280,42 @@ export default function DashboardPage() {
           </section>
         </div>
 
-        {/* Right Column: Assistant live + Invoices summary */}
+        {/* Right Column: Interactive Voice Assistant + Invoices summary */}
         <div className="space-y-space-lg xl:col-span-4">
-          <AssistantLiveCard />
+          <VoiceAssistPanel
+            stage={1}
+            role={isMerchant ? "seller" : "buyer"}
+            greeting={
+              isMerchant
+                ? "Hi! I’m SayPay Merchant Assist. Say what invoice you’d like to create, or ask to view pending payments."
+                : "Hi, I’m SayPay Assist. Tell me what bill you’d like to pay, or ask me to show your unpaid invoices."
+            }
+            suggestions={
+              isMerchant
+                ? [
+                    "Create invoice for buyer@saypay.app for $45",
+                    "Show pending invoices",
+                  ]
+                : [
+                    "Show my unpaid bills",
+                    "Pay GreenLeaf coffee order ($12.50)",
+                    "Pay TechNova invoice TN-2210",
+                  ]
+            }
+            onAssistantResult={(result) => {
+              if (result?.action === "prepare_payment") {
+                router.push("/new-check");
+              } else if (result?.action === "invoice_created") {
+                // Refresh dashboard to show the new invoice
+                fetch("/api/dashboard/stats")
+                  .then((r) => r.json())
+                  .then((data) => data.success && setStats(data));
+                fetch("/api/invoices?status=UNPAID")
+                  .then((r) => r.json())
+                  .then((data) => data.success && setUnpaidInvoices(data.invoices));
+              }
+            }}
+          />
 
           <section className="rounded-2xl border border-[#DFE5E8] bg-white p-5 shadow-[0_1px_3px_rgba(21,35,45,0.04),0_4px_12px_rgba(21,35,45,0.03)]">
             <div className="flex items-center justify-between mb-2">

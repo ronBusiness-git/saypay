@@ -55,20 +55,10 @@ export default function TopNavbar() {
           </nav>
         </div>
 
-        {/* Trailing Controls */}
+        {/* Trailing Controls: User Info and Logout */}
         <div className="flex items-center gap-3">
-          <Link
-            href="/new-check"
-            className="inline-flex min-h-[40px] items-center gap-1.5 rounded-[10px] bg-primary-container px-4 font-label-md text-label-md font-semibold text-white shadow-sm transition-all hover:bg-[#066653] active:scale-[0.98]"
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              {session?.role === "seller" ? "receipt_long" : "record_voice_over"}
-            </span>
-            {session?.role === "seller" ? "Create Invoice (AI)" : "Ask SayPay"}
-          </Link>
-
           {session ? (
-            <div className="flex items-center gap-2 pl-2 border-l border-[#DFE5E8]">
+            <div className="flex items-center gap-2">
               <div className="hidden sm:flex items-center gap-2 rounded-full border border-[#DFE5E8] bg-[#F7F8FA] py-1 pl-1 pr-3">
                 <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#A7F3D0] bg-[#EAF7F1] text-[11px] font-bold text-primary">
                   {session.initials || "JD"}

@@ -15,252 +15,23 @@ const SayPayGrid = dynamic(
   },
 );
 
-const transactions = [
-  {
-    id: "chk_demo_204",
-    sortDate: "2024-05-24T14:32",
-    date: "24 May 2024",
-    time: "14:32 UTC",
-    initials: "GL",
-    initialsStyle: "bg-[#EAF7F1] text-primary border-[#A7F3D0]",
-    merchant: "GreenLeaf Demo Store",
-    merchantId: "ID: mer_990142",
-    reference: "ref: GL-204",
-    amount: "USD 12.50",
-    matchCheckStatus: "CLEAR",
-    matchCheckCategory: "CLEAR",
-    matchCheckIcon: "dot",
-    matchCheckStyle: "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]",
-    paymentStatus: "COMPLETED",
-    paymentCategory: "COMPLETED",
-    paymentIcon: "check_circle",
-    paymentStyle: "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]",
-    actionLabel: "View Receipt & Audit",
-    href: "/checks/chk_demo_204",
-  },
-  {
-    id: "chk_demo_203",
-    sortDate: "2024-05-24T11:15",
-    date: "24 May 2024",
-    time: "11:15 UTC",
-    initials: "AC",
-    initialsStyle: "bg-surface-container text-secondary border-outline-variant",
-    merchant: "Aura Cloud Hosting",
-    merchantId: "ID: mer_182903",
-    reference: "ref: AC-901",
-    amount: "USD 125.00",
-    matchCheckStatus: "REVIEW (Mismatch)",
-    matchCheckCategory: "REVIEW",
-    matchCheckIcon: "warning",
-    matchCheckStyle: "bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]",
-    paymentStatus: "Not started",
-    paymentCategory: "NOT_STARTED",
-    paymentIcon: "dot_gray",
-    paymentStyle: "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]",
-    actionLabel: "View Check",
-    href: "/checks/chk_demo_203",
-  },
-  {
-    id: "chk_demo_202",
-    sortDate: "2024-05-23T18:40",
-    date: "23 May 2024",
-    time: "18:40 UTC",
-    initials: "UE",
-    initialsStyle: "bg-[#FEE2E2] text-[#DC2626] border-[#FECACA]",
-    merchant: "Untrusted Escrow Node 7",
-    merchantId: "ID: mer_664120",
-    reference: "ref: ESC-312",
-    amount: "USD 50.00",
-    matchCheckStatus: "BLOCKED (Untrusted)",
-    matchCheckCategory: "BLOCKED",
-    matchCheckIcon: "block",
-    matchCheckStyle: "bg-[#FEE2E2] text-[#DC2626] border-[#FECACA]",
-    paymentStatus: "Not started",
-    paymentCategory: "NOT_STARTED",
-    paymentIcon: "dot_gray",
-    paymentStyle: "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]",
-    actionLabel: "View Check",
-    href: "/checks/chk_demo_202",
-  },
-  {
-    id: "chk_demo_201",
-    sortDate: "2024-05-23T16:05",
-    date: "23 May 2024",
-    time: "16:05 UTC",
-    initials: "AR",
-    initialsStyle: "bg-surface-container text-secondary border-outline-variant",
-    merchant: "Artisan Roast Roastery",
-    merchantId: "ID: mer_774023",
-    reference: "ref: ARR-88",
-    amount: "USD 34.00",
-    matchCheckStatus: "CLEAR",
-    matchCheckCategory: "CLEAR",
-    matchCheckIcon: "dot",
-    matchCheckStyle: "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]",
-    paymentStatus: "CANCELLED (Voice reject)",
-    paymentCategory: "CANCELLED",
-    paymentIcon: "cancel",
-    paymentStyle: "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]",
-    actionLabel: "View Detail",
-    href: "/checks/chk_demo_201",
-  },
-  {
-    id: "chk_demo_200",
-    sortDate: "2024-05-22T09:20",
-    date: "22 May 2024",
-    time: "09:20 UTC",
-    initials: "QS",
-    initialsStyle: "bg-surface-container text-secondary border-outline-variant",
-    merchant: "QuickSaaS Global",
-    merchantId: "ID: mer_551982",
-    reference: "ref: QS-419",
-    amount: "USD 89.00",
-    matchCheckStatus: "CLEAR",
-    matchCheckCategory: "CLEAR",
-    matchCheckIcon: "dot",
-    matchCheckStyle: "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]",
-    paymentStatus: "UNKNOWN (Pending Sync)",
-    paymentCategory: "UNKNOWN",
-    paymentIcon: "sync",
-    paymentStyle: "bg-[#F3E8FF] text-[#7E22CE] border-[#E9D5FF]",
-    actionLabel: "View Status",
-    href: "/checks/chk_demo_200",
-  },
-  {
-    id: "chk_demo_199",
-    sortDate: "2024-05-21T15:45",
-    date: "21 May 2024",
-    time: "15:45 UTC",
-    initials: "SP",
-    initialsStyle: "bg-[#EAF7F1] text-primary border-[#A7F3D0]",
-    merchant: "SwiftParcel Deliveries",
-    merchantId: "ID: mer_309112",
-    reference: "ref: SPD-102",
-    amount: "USD 18.20",
-    matchCheckStatus: "CLEAR",
-    matchCheckCategory: "CLEAR",
-    matchCheckIcon: "dot",
-    matchCheckStyle: "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]",
-    paymentStatus: "COMPLETED",
-    paymentCategory: "COMPLETED",
-    paymentIcon: "check_circle",
-    paymentStyle: "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]",
-    actionLabel: "View Receipt",
-    href: "/checks/chk_demo_199",
-  },
-  {
-    id: "chk_nts55",
-    sortDate: "2024-05-21T10:12",
-    date: "21 May 2024",
-    time: "10:12 UTC",
-    initials: "NT",
-    initialsStyle: "bg-surface-container text-secondary border-outline-variant",
-    merchant: "Nordic Timber Supply",
-    merchantId: "ID: mer_880193",
-    reference: "ref: NTS-55",
-    amount: "USD 440.00",
-    matchCheckStatus: "REVIEW (Unverified)",
-    matchCheckCategory: "REVIEW",
-    matchCheckIcon: "warning",
-    matchCheckStyle: "bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]",
-    paymentStatus: "Not started",
-    paymentCategory: "NOT_STARTED",
-    paymentIcon: "dot_gray",
-    paymentStyle: "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]",
-    actionLabel: "View Check",
-    href: "/checks/chk_nts55",
-  },
-  {
-    id: "chk_cbr03",
-    sortDate: "2024-05-20T17:30",
-    date: "20 May 2024",
-    time: "17:30 UTC",
-    initials: "CB",
-    initialsStyle: "bg-[#EAF7F1] text-primary border-[#A7F3D0]",
-    merchant: "City Bike Repair Hub",
-    merchantId: "ID: mer_442998",
-    reference: "ref: CBR-03",
-    amount: "USD 65.00",
-    matchCheckStatus: "CLEAR",
-    matchCheckCategory: "CLEAR",
-    matchCheckIcon: "dot",
-    matchCheckStyle: "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]",
-    paymentStatus: "COMPLETED",
-    paymentCategory: "COMPLETED",
-    paymentIcon: "check_circle",
-    paymentStyle: "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]",
-    actionLabel: "View Receipt",
-    href: "/checks/chk_cbr03",
-  },
-  {
-    id: "chk_cfa77",
-    sortDate: "2024-05-19T13:10",
-    date: "19 May 2024",
-    time: "13:10 UTC",
-    initials: "CF",
-    initialsStyle: "bg-[#FEE2E2] text-[#DC2626] border-[#FECACA]",
-    merchant: "Cloudflare Sandbox Addon",
-    merchantId: "ID: mer_110992",
-    reference: "ref: CFA-77",
-    amount: "USD 15.00",
-    matchCheckStatus: "CLEAR",
-    matchCheckCategory: "CLEAR",
-    matchCheckIcon: "dot",
-    matchCheckStyle: "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]",
-    paymentStatus: "FAILED (Gateway)",
-    paymentCategory: "FAILED",
-    paymentIcon: "error",
-    paymentStyle: "bg-[#FEE2E2] text-[#DC2626] border-[#FECACA]",
-    actionLabel: "View Detail",
-    href: "/checks/chk_cfa77",
-  },
-  {
-    id: "chk_apx99",
-    sortDate: "2024-05-18T11:00",
-    date: "18 May 2024",
-    time: "11:00 UTC",
-    initials: "AP",
-    initialsStyle: "bg-[#FEE2E2] text-[#DC2626] border-[#FECACA]",
-    merchant: "Apex Web Hosting Demo",
-    merchantId: "ID: mer_992104",
-    reference: "ref: APX-99",
-    amount: "USD 29.99",
-    matchCheckStatus: "BLOCKED (Pattern)",
-    matchCheckCategory: "BLOCKED",
-    matchCheckIcon: "block",
-    matchCheckStyle: "bg-[#FEE2E2] text-[#DC2626] border-[#FECACA]",
-    paymentStatus: "Not started",
-    paymentCategory: "NOT_STARTED",
-    paymentIcon: "dot_gray",
-    paymentStyle: "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]",
-    actionLabel: "View Check",
-    href: "/checks/chk_apx99",
-  },
+const FILTER_PILLS = [
+  { label: "All Transactions", value: "ALL", style: "border-[#DFE5E8] bg-white text-secondary" },
+  { label: "Completed", value: "COMPLETED", style: "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]" },
+  { label: "Checked Clear", value: "CHECKED_CLEAR", style: "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]" },
+  { label: "Review", value: "REVIEW", style: "bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]" },
+  { label: "Blocked", value: "BLOCKED", style: "bg-[#FEE2E2] text-[#DC2626] border-[#FECACA]" },
 ];
 
-const filterPills = [
-  { label: "All (34)", value: "ALL", count: 34 },
-  { label: "CLEAR (20)", value: "CLEAR", count: 20, style: "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0] hover:bg-[#d6f2e4]" },
-  { label: "REVIEW (6)", value: "REVIEW", count: 6, style: "bg-[#FEF3C7] text-[#B45309] border-[#FDE68A] hover:bg-[#fde9a8]" },
-  { label: "BLOCKED (4)", value: "BLOCKED", count: 4, style: "bg-[#FEE2E2] text-[#DC2626] border-[#FECACA] hover:bg-[#fcd0d0]" },
-  { label: "Completed (18)", value: "COMPLETED", count: 18, style: "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0] hover:bg-[#d6f2e4]" },
-  { label: "Cancelled (3)", value: "CANCELLED", count: 3, style: "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB] hover:bg-[#e7e9ed]" },
-  { label: "Failed (2)", value: "FAILED", count: 2, style: "bg-[#FEE2E2] text-[#DC2626] border-[#FECACA] hover:bg-[#fcd0d0]" },
-  { label: "Unknown (1)", value: "UNKNOWN", count: 1, style: "bg-[#F3E8FF] text-[#7E22CE] border-[#E9D5FF] hover:bg-[#e9d2fd]" },
-];
-
-/**
- * SayPay Transaction History Page
- * Exact UI based on the design mockup and reference HTML.
- */
 export default function HistoryPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("ALL");
   const [realTransactions, setRealTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
   const gridApiRef = useRef(null);
 
   useEffect(() => {
-    fetch("/api/transactions?limit=50")
+    fetch("/api/transactions?limit=100")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data && Array.isArray(data.items)) {
@@ -276,17 +47,21 @@ export default function HistoryPage() {
               minute: "2-digit",
             });
             const initials = (tx.merchantKey || "GL").slice(0, 2).toUpperCase();
-            const amountStr = `${tx.currency || "USD"} ${(tx.amountMinor / 100).toFixed(2)}`;
+            const amountStr = `${tx.currency || "USD"} ${((tx.amountMinor || 0) / 100).toFixed(2)}`;
+
+            const isCompleted = tx.paymentStatus === "COMPLETED";
 
             return {
               id: tx.checkId || tx.transactionId,
+              transactionId: tx.transactionId,
+              sortDate: tx.createdAt,
               date: dateStr,
               time: `${timeStr} UTC`,
               initials,
               initialsStyle: "bg-[#EAF7F1] text-primary border-[#A7F3D0]",
               merchant: tx.merchantKey || "GreenLeaf Demo Store",
               merchantId: `ID: ${tx.paypalOrderId || tx.transactionId?.slice(0, 8)}`,
-              reference: `ref: ${tx.reference || "GL-204"}`,
+              reference: `ref: ${tx.reference || "GL-1042"}`,
               amount: amountStr,
               matchCheckStatus: "CLEAR",
               matchCheckCategory: "CLEAR",
@@ -294,38 +69,39 @@ export default function HistoryPage() {
               matchCheckStyle: "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]",
               paymentStatus: tx.paymentStatus || "COMPLETED",
               paymentCategory: tx.paymentStatus || "COMPLETED",
-              paymentIcon: tx.paymentStatus === "COMPLETED" ? "check_circle" : "warning",
-              paymentStyle:
-                tx.paymentStatus === "COMPLETED"
-                  ? "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]"
-                  : "bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]",
-              actionLabel: "View Receipt & Audit",
-              href: `/result/${tx.transactionId}`,
+              paymentIcon: isCompleted ? "check_circle" : "warning",
+              paymentStyle: isCompleted
+                ? "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]"
+                : "bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]",
+              actionLabel: "View Details",
+              href: `/new-check`,
             };
           });
           setRealTransactions(mapped);
         }
       })
-      .catch(() => {});
+      .catch((err) => console.warn("Failed to load history:", err))
+      .finally(() => setLoading(false));
   }, []);
 
   const filteredTransactions = useMemo(() => {
-    const list = [...realTransactions, ...transactions];
-    return list.filter((t) => {
+    return realTransactions.filter((t) => {
+      const search = searchTerm.toLowerCase();
       const matchesSearch =
-        searchTerm === "" ||
-        t.merchant.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.id.toLowerCase().includes(searchTerm.toLowerCase());
+        search === "" ||
+        t.merchant.toLowerCase().includes(search) ||
+        t.reference.toLowerCase().includes(search) ||
+        t.id.toLowerCase().includes(search) ||
+        (t.transactionId && t.transactionId.toLowerCase().includes(search));
 
       const matchesStatus =
         selectedFilter === "ALL" ||
-        t.matchCheckCategory === selectedFilter ||
-        t.paymentCategory === selectedFilter;
+        t.paymentCategory === selectedFilter ||
+        t.matchCheckCategory === selectedFilter;
 
       return matchesSearch && matchesStatus;
     });
-  }, [searchTerm, selectedFilter]);
+  }, [realTransactions, searchTerm, selectedFilter]);
 
   const gridRows = useMemo(
     () =>
@@ -348,16 +124,39 @@ export default function HistoryPage() {
         payment: {
           label: row.paymentStatus,
           className: row.paymentStyle,
-          icon: row.paymentIcon === "dot_gray" ? "dot" : row.paymentIcon,
+          icon: row.paymentIcon,
         },
         action: { href: row.href, label: row.actionLabel },
       })),
     [filteredTransactions],
   );
 
-  useEffect(() => {
-    gridApiRef.current?.paginationGoToFirstPage();
-  }, [searchTerm, selectedFilter]);
+  const handleExportCsv = () => {
+    if (gridApiRef.current && typeof gridApiRef.current.exportDataAsCsv === "function") {
+      gridApiRef.current.exportDataAsCsv({
+        fileName: `saypay_transactions_${new Date().toISOString().split("T")[0]}.csv`,
+      });
+    } else {
+      const headers = ["ID", "Date", "Merchant", "Reference", "Amount", "MatchCheck", "PaymentStatus"];
+      const rows = filteredTransactions.map((t) => [
+        `"${t.id}"`,
+        `"${t.date} ${t.time}"`,
+        `"${t.merchant}"`,
+        `"${t.reference}"`,
+        `"${t.amount}"`,
+        `"${t.matchCheckStatus}"`,
+        `"${t.paymentStatus}"`,
+      ]);
+      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `saypay_transactions_${new Date().toISOString().split("T")[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
 
   const handleGridReady = (event) => {
     gridApiRef.current = event.api;
@@ -374,27 +173,29 @@ export default function HistoryPage() {
             </span>
             <span className="text-outline-variant">•</span>
             <span className="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-surface-container text-secondary">
-              Live Sandbox Flow
+              Live PayPal Sandbox
             </span>
           </div>
           <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">
             Transaction History
           </h1>
           <p className="font-body-md text-body-md text-secondary mt-1">
-            Showing {filteredTransactions.length} of 34 payment checks and sandbox transaction outcomes
+            Showing {filteredTransactions.length} of {realTransactions.length} verified database transactions
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
+            onClick={handleExportCsv}
             className="inline-flex items-center justify-center gap-2 bg-surface-container-lowest border border-outline-variant hover:bg-surface-container-low text-on-surface font-label-md text-label-md h-11 px-4 rounded-[10px] transition-colors shadow-sm active:scale-[0.98]"
             type="button"
+            title="Download CSV"
           >
             <span className="material-symbols-outlined text-[18px] text-secondary">download</span>
             <span>Export CSV</span>
           </button>
           <Link
             href="/new-check"
-            className="inline-flex items-center justify-center gap-2 bg-primary-container hover:bg-[#066653] text-on-primary font-label-md text-label-md h-11 px-5 rounded-[10px] shadow-sm transition-all duration-150 active:scale-[0.98] focus:ring-4 focus:ring-[#EAF7F1]"
+            className="inline-flex items-center justify-center gap-2 bg-primary-container hover:bg-[#066653] text-on-primary font-label-md text-label-md h-11 px-5 rounded-[10px] shadow-sm transition-all duration-150 active:scale-[0.98]"
           >
             <span className="material-symbols-outlined text-[20px]">add_circle</span>
             <span>New Payment Check</span>
@@ -402,7 +203,7 @@ export default function HistoryPage() {
         </div>
       </div>
 
-      {/* Filter & Search Surface Bar */}
+      {/* Filter & Search Bar */}
       <div className="bg-surface-container-lowest border border-outline-variant rounded-[16px] p-4 md:p-5 shadow-[0_1px_3px_rgba(21,35,45,0.04),0_4px_12px_rgba(21,35,45,0.03)] mb-6">
         <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
           {/* Search Input */}
@@ -419,66 +220,35 @@ export default function HistoryPage() {
             />
           </div>
 
-          {/* Controls Cluster: Date Selector & Clear Action */}
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Date Range Picker Selector */}
-            <div className="relative">
-              <button
-                className="h-11 px-3.5 bg-surface-container-lowest border border-outline-variant hover:bg-surface-container-low rounded-[10px] flex items-center gap-2 text-on-surface font-label-md text-label-md transition-colors"
-                type="button"
-              >
-                <span className="material-symbols-outlined text-[18px] text-secondary">calendar_today</span>
-                <span>Last 30 days</span>
-                <span className="material-symbols-outlined text-[18px] text-secondary ml-1">expand_more</span>
-              </button>
-            </div>
-
-            {/* Clear Filters Button */}
-            <button
-              onClick={() => {
-                setSearchTerm("");
-                setSelectedFilter("ALL");
-              }}
-              className="h-11 px-3 text-secondary hover:text-primary font-label-md text-label-md flex items-center gap-1 transition-colors active:scale-[0.98]"
-              type="button"
-            >
-              <span className="material-symbols-outlined text-[16px]">close</span>
-              <span>Clear filters</span>
-            </button>
-          </div>
+          {/* Clear Filters */}
+          <button
+            onClick={() => {
+              setSearchTerm("");
+              setSelectedFilter("ALL");
+            }}
+            className="h-11 px-3 text-secondary hover:text-primary font-label-md text-label-md flex items-center gap-1 transition-colors active:scale-[0.98]"
+            type="button"
+          >
+            <span className="material-symbols-outlined text-[16px]">close</span>
+            <span>Clear filters</span>
+          </button>
         </div>
 
         {/* Filter Pills Row */}
         <div className="flex items-center gap-2 overflow-x-auto pt-4 mt-4 border-t border-[#F7F8FA] no-scrollbar">
           <span className="font-label-sm text-label-sm text-secondary uppercase tracking-wider pr-1">
-            Filter by Status:
+            Status:
           </span>
-          {filterPills.map((pill) => {
+          {FILTER_PILLS.map((pill) => {
             const isActive = selectedFilter === pill.value;
-            if (pill.value === "ALL") {
-              return (
-                <button
-                  key={pill.value}
-                  onClick={() => setSelectedFilter("ALL")}
-                  className={`px-3 py-1.5 rounded-full font-label-sm text-label-sm font-semibold transition-all ${
-                    isActive
-                      ? "bg-primary-container text-on-primary shadow-xs"
-                      : "bg-[#F3F4F6] text-secondary hover:bg-surface-container-low"
-                  }`}
-                  type="button"
-                >
-                  {pill.label}
-                </button>
-              );
-            }
             return (
               <button
                 key={pill.value}
-                onClick={() => setSelectedFilter(isActive ? "ALL" : pill.value)}
-                className={`px-3 py-1.5 rounded-full font-label-sm text-label-sm border transition-colors ${
+                onClick={() => setSelectedFilter(pill.value)}
+                className={`px-3 py-1.5 rounded-full font-label-sm text-label-sm border transition-all ${
                   isActive
-                    ? "ring-2 ring-primary-container font-semibold " + pill.style
-                    : pill.style
+                    ? "bg-primary-container text-white font-bold border-primary-container shadow-xs"
+                    : "bg-white text-secondary hover:bg-surface-container-low " + pill.style
                 }`}
                 type="button"
               >
@@ -489,14 +259,14 @@ export default function HistoryPage() {
         </div>
       </div>
 
-      {/* Comprehensive Transaction History Grid Container */}
+      {/* AG Grid Container */}
       <div className="bg-surface-container-lowest border border-outline-variant rounded-[16px] overflow-hidden shadow-[0_1px_3px_rgba(21,35,45,0.04),0_4px_12px_rgba(21,35,45,0.03)]">
         <div className="p-1.5 sm:p-2">
           <SayPayGrid
             variant="history"
             rowData={gridRows}
             pagination
-            paginationPageSize={8}
+            paginationPageSize={10}
             onGridReady={handleGridReady}
             ariaLabel="Transaction history"
           />
@@ -506,27 +276,11 @@ export default function HistoryPage() {
         <div className="px-5 py-4 bg-surface-container-lowest border-t border-outline-variant flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="font-body-sm text-body-sm text-secondary">
             Showing <span className="font-semibold text-on-surface">{filteredTransactions.length}</span> of{" "}
-            <span className="font-semibold text-on-surface">34</span> checks
+            <span className="font-semibold text-on-surface">{realTransactions.length}</span> database records
           </div>
-          <div className="flex items-center gap-2 font-body-sm text-body-sm text-secondary">
-            <span className="material-symbols-outlined text-[16px] text-primary">lock</span>
-            Sortable columns · server-backed audit record
+          <div className="font-code-sm text-code-sm text-secondary">
+            Database: MongoDB Atlas · Collection: transactions
           </div>
-        </div>
-      </div>
-
-      {/* Routing Annotation Note Bar */}
-      <div className="mt-6 bg-surface-container-low border border-outline-variant rounded-[12px] p-4 flex items-start gap-3">
-        <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 flex-shrink-0">
-          info
-        </span>
-        <div className="flex-1 font-body-sm text-body-sm text-secondary">
-          <span className="font-semibold text-on-surface">Routing Note:</span> Transactions with a
-          PayPal order navigate to Transaction Detail (
-          <span className="font-code-sm text-code-sm text-primary font-medium">/transactions/[id]</span>
-          ). Screenings blocked or abandoned prior to order creation navigate to read-only AI Match &amp; Safety Check (
-          <span className="font-code-sm text-code-sm text-primary font-medium">/checks/[id]</span>
-          ).
         </div>
       </div>
     </main>

@@ -22,7 +22,7 @@ export function cleanTextForSpeech(text) {
 /**
  * Soft Text-to-Speech using high-quality natural/neural browser voices.
  */
-export function speakSoftly(text, { onStart, onEnd } = {}) {
+export function speakSoftly(text, { onStart, onEnd, lang = "en-US" } = {}) {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) {
     return;
   }
@@ -34,7 +34,7 @@ export function speakSoftly(text, { onStart, onEnd } = {}) {
   if (!clean) return;
 
   const utterance = new SpeechSynthesisUtterance(clean);
-  utterance.lang = "en-US";
+  utterance.lang = lang;
   utterance.rate = 1.0;
   utterance.pitch = 1.05; // Slightly elevated warm pitch, non-robotic
   utterance.volume = 0.95;
@@ -42,6 +42,8 @@ export function speakSoftly(text, { onStart, onEnd } = {}) {
   const selectVoice = () => {
     const voices = window.speechSynthesis.getVoices() || [];
     if (!voices.length) return;
+
+    const langPrefix = lang.split("-")[0];
 
     // Prioritize natural, soft female/warm voices
     const preferredNames = [
@@ -52,21 +54,22 @@ export function speakSoftly(text, { onStart, onEnd } = {}) {
       "Microsoft Zira",
       "Natural",
       "Neural",
-      "en-US",
+      lang,
     ];
 
     let chosen = null;
     for (const name of preferredNames) {
       chosen = voices.find(
         (v) =>
-          v.name.toLowerCase().includes(name.toLowerCase()) ||
-          (v.lang === "en-US" && v.name.includes("Natural"))
+          (v.name.toLowerCase().includes(name.toLowerCase()) ||
+          (v.lang === lang && v.name.includes("Natural"))) &&
+          v.lang.startsWith(langPrefix)
       );
       if (chosen) break;
     }
 
     if (!chosen) {
-      chosen = voices.find((v) => v.lang.startsWith("en"));
+      chosen = voices.find((v) => v.lang.startsWith(langPrefix));
     }
 
     if (chosen) {
