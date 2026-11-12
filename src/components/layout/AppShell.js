@@ -8,10 +8,20 @@ import DemoLabDrawer from "../drawers/DemoLabDrawer.js";
 import SettingsDrawer from "../drawers/SettingsDrawer.js";
 import AuditLogDrawer from "../drawers/AuditLogDrawer.js";
 import SandboxWelcomeModal from "../modals/SandboxWelcomeModal.js";
+import {
+  MobileTabBarSkeleton,
+  NavbarSkeleton,
+} from "../ui/LoadingSkeletons.js";
 
 // Dynamically load navigation components without SSR to avoid usePathname prerender issue
-const TopNavbar = dynamic(() => import("./TopNavbar.js"), { ssr: false, loading: () => null });
-const MobileTabBar = dynamic(() => import("./MobileTabBar.js"), { ssr: false, loading: () => null });
+const TopNavbar = dynamic(() => import("./TopNavbar.js"), {
+  ssr: false,
+  loading: () => <NavbarSkeleton />,
+});
+const MobileTabBar = dynamic(() => import("./MobileTabBar.js"), {
+  ssr: false,
+  loading: () => <MobileTabBarSkeleton />,
+});
 
 export default function AppShell({ children }) {
   const [demoLabOpen, setDemoLabOpen] = useState(false);
@@ -24,7 +34,7 @@ export default function AppShell({ children }) {
       <SandboxBanner />
 
       {/* 2. Desktop Navigation */}
-      <Suspense fallback={null}>
+      <Suspense fallback={<NavbarSkeleton />}>
         <TopNavbar
           onOpenDemoLab={() => setDemoLabOpen(true)}
           onOpenSettings={() => setSettingsOpen(true)}
@@ -45,7 +55,7 @@ export default function AppShell({ children }) {
       <DisclaimerFooter />
 
       {/* 5. Mobile Bottom Tab Bar */}
-      <Suspense fallback={null}>
+      <Suspense fallback={<MobileTabBarSkeleton />}>
         <MobileTabBar />
       </Suspense>
 

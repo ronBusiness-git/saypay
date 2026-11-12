@@ -6,18 +6,13 @@ import dynamic from "next/dynamic";
 import ChecksBarChart from "../components/dashboard/ChecksBarChart.js";
 import ChecksLineChart from "../components/dashboard/ChecksLineChart.js";
 import AssistantLiveCard from "../components/dashboard/AssistantLiveCard.js";
+import { GridTableSkeleton } from "../components/ui/LoadingSkeletons.js";
 
 const SayPayGrid = dynamic(
   () => import("../components/grid/SayPayGrid.js"),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex h-56 items-center justify-center rounded-xl border border-dashed border-[#DFE5E8] bg-[#F7F8FA] text-center">
-        <span className="font-body-sm text-body-sm text-secondary">
-          Loading recent checks…
-        </span>
-      </div>
-    ),
+    loading: () => <GridTableSkeleton rows={5} label="Loading recent checks…" />,
   },
 );
 
