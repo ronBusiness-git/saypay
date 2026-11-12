@@ -4,12 +4,16 @@ import React from "react";
 
 export default function SandboxBanner() {
   return (
-    <div className="bg-[#FEF3C7] border-b border-[#FCD34D] px-4 py-1.5 text-center shadow-2xs">
-      <div className="max-w-[1280px] mx-auto flex items-center justify-center gap-2 text-xs font-semibold text-[#92400E]">
-        <span>⚡</span>
-        <span>PAYPAL DEVELOPER SANDBOX</span>
-        <span className="opacity-50">·</span>
-        <span className="font-medium text-[#78350F]">SayPay AI Safety Gateway Active</span>
+    <div className="sticky top-0 z-50 bg-[#FEF3C7] border-b border-[#FCD34D] px-4 md:px-margin-desktop py-1.5 text-center shadow-sm">
+      <div className="max-w-[1280px] mx-auto flex items-center justify-center gap-2">
+        <span className="material-symbols-outlined text-[#B45309] text-[18px]">warning</span>
+        <span className="font-label-md text-label-md text-[#B45309] font-medium tracking-wide">
+          PAYPAL SANDBOX — TEST ONLY · No real money
+        </span>
+        <span className="hidden md:inline-block text-[#B45309] opacity-60">|</span>
+        <span className="hidden md:inline-block font-body-sm text-body-sm text-[#B45309]">
+          SayPay Safety Gateway Active
+        </span>
       </div>
     </div>
   );

@@ -10,55 +10,128 @@ export async function GET(request) {
     await connectDB();
 
     const user = getSessionUser(request);
+    const isSeller = user?.role === "seller";
+    const merchantKey = user?.merchantKey || (isSeller ? "greenleaf-demo-store" : null);
 
-    // Filter query based on user role if logged in
-    const checkQuery = {};
-    const invoiceQuery = {};
-    const txQuery = {};
+    if (isSeller) {
+      // ----------------- SELLER / MERCHANT DASHBOARD STATS -----------------
+      const merchantInvoices = await Invoice.find({ merchantKey })
+        .sort({ createdAt: -1 })
+        .lean();
 
-    if (user) {
-      if (user.role === "seller" && user.merchantKey) {
-        checkQuery["intent.merchantKey"] = user.merchantKey;
-        invoiceQuery.merchantKey = user.merchantKey;
-        txQuery.merchantKey = user.merchantKey;
+      const totalInvoices = merchantInvoices.length;
+      const paidInvoicesList = merchantInvoices.filter((i) => i.status === "PAID");
+      const unpaidInvoicesList = merchantInvoices.filter((i) => i.status === "UNPAID");
+
+      const revenueMinor = paidInvoicesList.reduce((sum, inv) => {
+        return sum + Math.round(parseFloat(inv.amount || "0") * 100);
+      }, 0);
+
+      const pendingMinor = unpaidInvoicesList.reduce((sum, inv) => {
+        return sum + Math.round(parseFloat(inv.amount || "0") * 100);
+      }, 0);
+
+      // 7 days daily series
+      const now = new Date();
+      const dailyMap = {};
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split("T")[0];
+        dailyMap[dateStr] = {
+          date: dateStr,
+          checks: 0,
+          clear: 0,
+          review: 0,
+          blocked: 0,
+          volumeMinor: 0,
+        };
       }
+
+      merchantInvoices.forEach((inv) => {
+        const dateStr = new Date(inv.createdAt).toISOString().split("T")[0];
+        if (dailyMap[dateStr]) {
+          dailyMap[dateStr].checks += 1;
+          if (inv.status === "PAID") {
+            dailyMap[dateStr].clear += 1;
+            dailyMap[dateStr].volumeMinor += Math.round(parseFloat(inv.amount || "0") * 100);
+          } else {
+            dailyMap[dateStr].review += 1;
+          }
+        }
+      });
+
+      const daily = Object.values(dailyMap).sort((a, b) => a.date.localeCompare(b.date));
+
+      const recent = merchantInvoices.slice(0, 10).map((inv) => {
+        const isPaid = inv.status === "PAID";
+        return {
+          id: inv.invoiceId,
+          timestamp: new Date(inv.createdAt).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          counterparty: inv.buyerEmail,
+          amount: `$${parseFloat(inv.amount).toFixed(2)} ${inv.currency}`,
+          matchCheck: {
+            label: isPaid ? "SETTLED" : "PENDING",
+            className: isPaid
+              ? "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]"
+              : "bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]",
+            icon: isPaid ? "check_circle" : "pending",
+          },
+          payment: {
+            label: inv.status,
+            className: isPaid
+              ? "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]"
+              : "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]",
+            icon: isPaid ? "check_circle" : "dot",
+          },
+          action: { href: `/new-check`, label: "Manage" },
+        };
+      });
+
+      return NextResponse.json({
+        success: true,
+        role: "seller",
+        totals: {
+          totalInvoices,
+          paidInvoices: paidInvoicesList.length,
+          revenueMinor,
+          unpaidInvoices: unpaidInvoicesList.length,
+          pendingMinor,
+        },
+        daily,
+        recent,
+      });
     }
 
-    // 1. Check Totals
-    const [
-      totalChecks,
-      clearChecks,
-      reviewChecks,
-      blockedChecks,
-    ] = await Promise.all([
-      PaymentCheck.countDocuments(checkQuery),
-      PaymentCheck.countDocuments({ ...checkQuery, status: "CLEAR" }),
-      PaymentCheck.countDocuments({ ...checkQuery, status: "REVIEW" }),
-      PaymentCheck.countDocuments({ ...checkQuery, status: "BLOCKED" }),
+    // ----------------- BUYER DASHBOARD STATS -----------------
+    const [totalChecks, clearChecks, reviewChecks, blockedChecks] = await Promise.all([
+      PaymentCheck.countDocuments(),
+      PaymentCheck.countDocuments({ status: "CLEAR" }),
+      PaymentCheck.countDocuments({ status: "REVIEW" }),
+      PaymentCheck.countDocuments({ status: "BLOCKED" }),
     ]);
 
-    // 2. Transaction Totals (Completed PayPal payments)
-    const completedTxs = await Transaction.find({
-      ...txQuery,
-      paymentStatus: "COMPLETED",
-    }).lean();
-
+    const completedTxs = await Transaction.find({ paymentStatus: "COMPLETED" }).lean();
     const completedPaymentsCount = completedTxs.length;
     const volumeMinor = completedTxs.reduce((sum, tx) => sum + (tx.amountMinor || 0), 0);
 
-    // 3. Invoice Totals
+    const buyerEmail = user?.email || "buyer@saypay.app";
     const unpaidInvoicesList = await Invoice.find({
-      ...invoiceQuery,
+      buyerEmail: buyerEmail.toLowerCase(),
       status: "UNPAID",
     }).lean();
 
     const unpaidCount = unpaidInvoicesList.length;
     const unpaidMinor = unpaidInvoicesList.reduce((sum, inv) => {
-      const cents = Math.round(parseFloat(inv.amount || "0") * 100);
-      return sum + (isNaN(cents) ? 0 : cents);
+      return sum + Math.round(parseFloat(inv.amount || "0") * 100);
     }, 0);
 
-    // 4. Daily series for the past 7 days
+    // 7 days daily series
     const now = new Date();
     const dailyMap = {};
     for (let i = 6; i >= 0; i--) {
@@ -76,10 +149,7 @@ export async function GET(request) {
     }
 
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const recentChecks = await PaymentCheck.find({
-      ...checkQuery,
-      createdAt: { $gte: sevenDaysAgo },
-    }).lean();
+    const recentChecks = await PaymentCheck.find({ createdAt: { $gte: sevenDaysAgo } }).lean();
 
     recentChecks.forEach((c) => {
       const dateStr = new Date(c.createdAt).toISOString().split("T")[0];
@@ -92,7 +162,6 @@ export async function GET(request) {
     });
 
     const recentCompletedTxs = await Transaction.find({
-      ...txQuery,
       paymentStatus: "COMPLETED",
       createdAt: { $gte: sevenDaysAgo },
     }).lean();
@@ -106,17 +175,15 @@ export async function GET(request) {
 
     const daily = Object.values(dailyMap).sort((a, b) => a.date.localeCompare(b.date));
 
-    // 5. Recent Activity List (Checks + Transactions)
-    const latestChecks = await PaymentCheck.find(checkQuery)
+    const latestChecks = await PaymentCheck.find()
       .sort({ createdAt: -1 })
       .limit(10)
       .lean();
 
     const recent = latestChecks.map((c) => {
       const counterparty =
-        c.intent?.recipientName || c.request?.recipientName || c.intent?.merchantKey || "GreenLeaf Demo Store";
-      const amt = c.intent?.amount || c.request?.amount || "0.00";
-      const curr = c.intent?.currency || c.request?.currency || "USD";
+        c.intent?.recipientName || c.request?.recipientName || "GreenLeaf Demo Store";
+      const amt = c.intent?.amount || c.request?.amount || "12.50";
       const formattedDate = new Date(c.createdAt).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
@@ -127,42 +194,34 @@ export async function GET(request) {
       const isClear = c.status === "CLEAR";
       const isReview = c.status === "REVIEW";
 
-      const matchCheckChip = {
-        label: c.status,
-        className: isClear
-          ? "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]"
-          : isReview
-          ? "bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]"
-          : "bg-[#FEE2E2] text-[#DC2626] border-[#FECACA]",
-        icon: isClear ? "check_circle" : isReview ? "warning" : "block",
-      };
-
-      const paymentChip = {
-        label: isClear ? "APPROVED" : "PENDING",
-        className: isClear
-          ? "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]"
-          : "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]",
-        icon: isClear ? "check_circle" : "dot",
-      };
-
       return {
         id: c.checkId.slice(0, 12),
-        checkId: c.checkId,
         timestamp: formattedDate,
         counterparty,
         amount: `$${parseFloat(amt).toFixed(2)}`,
-        amountRaw: amt,
-        status: c.status,
-        canCreateOrder: c.canCreateOrder,
-        invoiceId: c.invoiceId || null,
-        matchCheck: matchCheckChip,
-        payment: paymentChip,
+        matchCheck: {
+          label: c.status,
+          className: isClear
+            ? "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]"
+            : isReview
+            ? "bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]"
+            : "bg-[#FEE2E2] text-[#DC2626] border-[#FECACA]",
+          icon: isClear ? "check_circle" : isReview ? "warning" : "block",
+        },
+        payment: {
+          label: isClear ? "APPROVED" : "PENDING",
+          className: isClear
+            ? "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]"
+            : "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]",
+          icon: isClear ? "check_circle" : "dot",
+        },
         action: { href: `/new-check`, label: "Pay" },
       };
     });
 
     return NextResponse.json({
       success: true,
+      role: "buyer",
       totals: {
         checks: totalChecks,
         clear: clearChecks,

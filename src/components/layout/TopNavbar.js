@@ -22,8 +22,8 @@ export default function TopNavbar() {
   };
 
   return (
-    <header className="bg-white border-b border-[#E2E8F0] shadow-2xs sticky top-0 z-40">
-      <div className="w-full px-4 md:px-8 max-w-[1280px] mx-auto flex items-center justify-between h-16">
+    <header className="bg-surface-container-lowest border-b border-[#DFE5E8] shadow-sm sticky top-0 z-40">
+      <div className="w-full px-4 md:px-margin-desktop max-w-[1280px] mx-auto flex items-center justify-between h-16">
         {/* Brand & Left Navigation Links */}
         <div className="flex items-center gap-8">
           <Link aria-label="SayPay Dashboard" className="flex items-center focus:outline-none" href="/">
@@ -33,20 +33,20 @@ export default function TopNavbar() {
           {/* Desktop Navigation Items */}
           <nav className="hidden md:flex items-center space-x-6">
             <Link
-              className={`text-sm font-semibold pb-1 flex items-center gap-1.5 transition-colors ${
+              className={`font-label-md text-label-md pb-1 flex items-center gap-1.5 transition-colors duration-150 ${
                 isDashboard
-                  ? "text-[#0070BA] border-b-2 border-[#0070BA]"
-                  : "text-[#64748B] hover:text-[#0F172A]"
+                  ? "text-primary border-b-2 border-primary font-semibold"
+                  : "text-secondary hover:text-on-surface"
               }`}
               href="/"
             >
               Dashboard
             </Link>
             <Link
-              className={`text-sm font-semibold pb-1 transition-colors ${
+              className={`font-label-md text-label-md pb-1 transition-colors duration-150 ${
                 isHistory
-                  ? "text-[#0070BA] border-b-2 border-[#0070BA]"
-                  : "text-[#64748B] hover:text-[#0F172A]"
+                  ? "text-primary border-b-2 border-primary font-semibold"
+                  : "text-secondary hover:text-on-surface"
               }`}
               href="/history"
             >
@@ -55,47 +55,50 @@ export default function TopNavbar() {
           </nav>
         </div>
 
-        {/* Trailing Controls: Ask SayPay CTA + User Profile */}
+        {/* Trailing Controls */}
         <div className="flex items-center gap-3">
-          {/* Prominent Ask SayPay Button */}
           <Link
             href="/new-check"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-tr from-[#003087] to-[#0070BA] hover:from-[#00256B] hover:to-[#005ea6] text-white text-xs font-bold shadow-md shadow-[#0070BA]/20 hover:scale-102 transition-all active:scale-98"
+            className="inline-flex min-h-[40px] items-center gap-1.5 rounded-[10px] bg-primary-container px-4 font-label-md text-label-md font-semibold text-white shadow-sm transition-all hover:bg-[#066653] active:scale-[0.98]"
           >
-            <span className="text-sm">🎙️</span>
-            <span>Ask SayPay</span>
+            <span className="material-symbols-outlined text-[18px]">
+              {session?.role === "seller" ? "receipt_long" : "record_voice_over"}
+            </span>
+            {session?.role === "seller" ? "Create Invoice (AI)" : "Ask SayPay"}
           </Link>
 
           {session ? (
-            <div className="flex items-center gap-3 pl-2 border-l border-[#E2E8F0]">
-              <div className="hidden sm:flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-[#F8FAFC] py-1 pl-1 pr-3">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0070BA] text-[11px] font-bold text-white">
+            <div className="flex items-center gap-2 pl-2 border-l border-[#DFE5E8]">
+              <div className="hidden sm:flex items-center gap-2 rounded-full border border-[#DFE5E8] bg-[#F7F8FA] py-1 pl-1 pr-3">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#A7F3D0] bg-[#EAF7F1] text-[11px] font-bold text-primary">
                   {session.initials || "JD"}
                 </span>
                 <span className="hidden lg:block leading-tight text-left">
-                  <span className="block text-xs font-bold text-[#0F172A]">
+                  <span className="block font-label-md text-label-md font-semibold text-on-surface">
                     {session.name}
                   </span>
-                  <span className="block text-[10px] text-[#64748B]">
-                    {session.role === "seller" ? "Merchant" : "Buyer"}
+                  <span className="block font-code-sm text-[10px] text-secondary">
+                    {session.role === "seller" ? "Merchant Account" : "Buyer Account"}
                   </span>
                 </span>
               </div>
               <button
                 onClick={handleLogout}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[#E2E8F0] bg-white text-xs font-semibold text-[#64748B] hover:border-red-200 hover:bg-red-50 hover:text-red-600 transition-colors"
+                className="inline-flex min-h-[38px] items-center gap-1 rounded-[10px] border border-[#DFE5E8] bg-white px-3 font-label-md text-label-md font-semibold text-secondary hover:border-[#FECACA] hover:bg-[#FFF5F5] hover:text-[#DC2626] transition-colors"
                 type="button"
-                title="Sign out"
+                title="Log out"
               >
-                Sign out
+                <span className="material-symbols-outlined text-[16px]">logout</span>
+                <span className="hidden sm:inline">Log out</span>
               </button>
             </div>
           ) : (
             <Link
               href="/login"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0070BA] text-white text-xs font-bold hover:bg-[#005ea6] transition-colors shadow-sm"
+              className="inline-flex min-h-[40px] items-center gap-1.5 rounded-[10px] bg-primary-container px-4 font-label-md text-label-md font-semibold text-white shadow-sm hover:bg-[#066653]"
             >
-              Sign in
+              <span className="material-symbols-outlined text-[18px]">login</span>
+              Log in
             </Link>
           )}
         </div>

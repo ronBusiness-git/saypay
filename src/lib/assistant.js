@@ -10,7 +10,7 @@ const GROQ_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
 /**
  * Call Groq chat completions to extract conversational intent and generate warm natural reply.
  */
-async function callGroqAssistant({ messages, unpaidInvoices, user }) {
+async function callGroqAssistant({ messages, unpaidInvoices, user, isSeller }) {
   const groqKey = process.env.GROQ_API_KEY;
   if (!groqKey) return null;
 
@@ -24,8 +24,40 @@ async function callGroqAssistant({ messages, unpaidInvoices, user }) {
     dueDate: inv.dueDate,
   }));
 
-  const systemPrompt = `You are SayPay Assist, an intelligent, friendly conversational payment assistant for PayPal.
-Current User: ${user?.name || "John Doe"} (${user?.email || "buyer@saypay.app"}).
+  let systemPrompt = "";
+
+  if (isSeller) {
+    systemPrompt = `You are SayPay Merchant Assistant.
+Current User: ${user?.name || "GreenLeaf Demo Store"} (${user?.email || "seller@saypay.app"}), Role: MERCHANT.
+Merchant Key: ${user?.merchantKey || "greenleaf-demo-store"}.
+
+Your job is to understand when the merchant wants to create or issue an invoice, or check billing status.
+Be concise and warm (1-2 sentences max).
+
+Available unpaid invoices issued by this merchant:
+${JSON.stringify(invoiceSummary.slice(0, 5), null, 2)}
+
+You MUST output a valid JSON object ONLY:
+{
+  "reply": "Warm natural 1-2 sentence spoken reply.",
+  "action": "none" | "create_invoice" | "show_invoices" | "need_info",
+  "invoiceDetails": {
+    "buyerEmail": "buyer@saypay.app",
+    "amount": "12.50",
+    "description": "Office organic coffee and tea supplies",
+    "currency": "USD"
+  }
+}
+
+Rules for Merchant:
+1. If merchant says "create invoice", "bill [user]", "send invoice for [item] [amount]":
+   action = "create_invoice"
+   extract buyerEmail (default "buyer@saypay.app"), amount (string 2 decimal places e.g. "45.00"), description, and currency ("USD").
+2. If merchant asks "show my invoices" or "pending invoices": action = "show_invoices".
+3. If greeting or general chatter: action = "none".`;
+  } else {
+    systemPrompt = `You are SayPay Assist, an intelligent conversational payment assistant for PayPal.
+Current User: ${user?.name || "John Doe"} (${user?.email || "buyer@saypay.app"}), Role: BUYER.
 
 Your job is to understand what the user wants, generate a SHORT, warm, speakable reply (1-2 sentences max), and decide on the action.
 Speak naturally like a helpful payment assistant. Do NOT use markdown asterisks or robotic phrases.
@@ -33,7 +65,7 @@ Speak naturally like a helpful payment assistant. Do NOT use markdown asterisks 
 Available unpaid invoices for this user in the database:
 ${JSON.stringify(invoiceSummary, null, 2)}
 
-You MUST reply with a valid JSON object only, in this exact format:
+You MUST reply with a valid JSON object only:
 {
   "reply": "Warm natural 1-2 sentence spoken reply.",
   "action": "none" | "show_invoices" | "prepare_payment" | "need_info" | "show_history",
@@ -42,19 +74,20 @@ You MUST reply with a valid JSON object only, in this exact format:
 }
 
 Action Rules:
-1. "none": Greetings (e.g. "hi", "hello", "how are you"), general small talk, or polite chatter.
-2. "show_invoices": User asks to see their bills, invoices, what they owe, pending charges, etc. (e.g. "show my bills", "what invoices do I have?").
-3. "prepare_payment": User wants to pay a bill, merchant, or invoice (e.g. "pay GreenLeaf", "pay invoice GL-1042", "pay the coffee bill", "pay $12.50 to GreenLeaf"). Set "targetInvoiceId" to the matching invoiceId. If multiple or unsure, match the closest one or ask.
-4. "need_info": User wants to pay but didn't specify which bill and there are multiple, or intent is ambiguous. Ask gently.
-5. "show_history": User asks about recent transactions, payment receipts, or history.`;
+1. "none": Greetings, small talk, or polite chatter.
+2. "show_invoices": User asks to see their bills, invoices, what they owe, pending charges.
+3. "prepare_payment": User wants to pay a bill, merchant, or invoice (e.g. "pay GreenLeaf", "pay invoice GL-1042", "pay the coffee bill", "pay $12.50 to GreenLeaf"). Set "targetInvoiceId" to the matching invoiceId.
+4. "need_info": User wants to pay but didn't specify which bill and there are multiple.
+5. "show_history": User asks about recent transactions or payment receipts.`;
+  }
 
   const payload = {
     model: GROQ_MODEL,
     messages: [
       { role: "system", content: systemPrompt },
-      ...messages.slice(-6), // keep recent context
+      ...messages.slice(-5),
     ],
-    temperature: 0.2,
+    temperature: 0.1,
     response_format: { type: "json_object" },
   };
 
@@ -82,10 +115,32 @@ Action Rules:
 /**
  * Heuristic fallback parser if Groq API is unavailable or times out.
  */
-function heuristicAssistant({ lastMessageText, unpaidInvoices }) {
+function heuristicAssistant({ lastMessageText, unpaidInvoices, isSeller }) {
   const text = (lastMessageText || "").toLowerCase().trim();
 
-  // Greetings
+  // Merchant flow
+  if (isSeller) {
+    if (/(create|generate|send|issue|add).*(invoice|bill)/i.test(text) || text.includes("invoice")) {
+      const amtMatch = text.match(/\$?(\d+(?:\.\d{1,2})?)/);
+      const amount = amtMatch ? parseFloat(amtMatch[1]).toFixed(2) : "25.00";
+      return {
+        reply: `I've created invoice for buyer@saypay.app for $${amount}. It is now pending payment.`,
+        action: "create_invoice",
+        invoiceDetails: {
+          buyerEmail: "buyer@saypay.app",
+          amount,
+          description: "Artisan specialty goods & supplies",
+          currency: "USD",
+        },
+      };
+    }
+    return {
+      reply: "Hello! As a merchant, you can tell me to create an invoice for a customer, or ask to view your pending invoices.",
+      action: "none",
+    };
+  }
+
+  // Buyer flow
   if (
     /^(hi|hello|hey|good morning|good afternoon|good evening|how are you|what's up)\b/i.test(
       text
@@ -98,7 +153,6 @@ function heuristicAssistant({ lastMessageText, unpaidInvoices }) {
     };
   }
 
-  // Show invoices
   if (
     /(show|list|view|get|what|check).*(invoice|bill|unpaid|due|owe)/i.test(text) ||
     /^(invoices|bills|unpaid)$/i.test(text)
@@ -110,7 +164,6 @@ function heuristicAssistant({ lastMessageText, unpaidInvoices }) {
     };
   }
 
-  // History
   if (/(history|past payment|recent payment|receipt|transactions)/i.test(text)) {
     return {
       reply: "Here is your recent payment history and receipts.",
@@ -119,9 +172,7 @@ function heuristicAssistant({ lastMessageText, unpaidInvoices }) {
     };
   }
 
-  // Payment intent
   if (/(pay|checkout|settle|send)/i.test(text)) {
-    // Check if an invoice ID matches (e.g. GL-1042, TN-2210, AC-901)
     for (const inv of unpaidInvoices) {
       if (text.includes(inv.invoiceId.toLowerCase())) {
         return {
@@ -132,17 +183,9 @@ function heuristicAssistant({ lastMessageText, unpaidInvoices }) {
       }
     }
 
-    // Check if merchant name matches
     for (const inv of unpaidInvoices) {
       const mName = inv.merchantName.toLowerCase();
-      const mKey = inv.merchantKey.toLowerCase();
-      if (
-        text.includes(mName) ||
-        text.includes(mKey) ||
-        (mName.includes("greenleaf") && text.includes("greenleaf")) ||
-        (mName.includes("technova") && text.includes("technova")) ||
-        (mName.includes("apex") && text.includes("apex"))
-      ) {
+      if (text.includes(mName) || text.includes("greenleaf") || text.includes("coffee")) {
         return {
           reply: `I found your unpaid invoice with ${inv.merchantName} for $${inv.amount}. Everything is verified.`,
           action: "prepare_payment",
@@ -151,18 +194,6 @@ function heuristicAssistant({ lastMessageText, unpaidInvoices }) {
       }
     }
 
-    // Check if amount matches
-    for (const inv of unpaidInvoices) {
-      if (text.includes(inv.amount)) {
-        return {
-          reply: `I found your invoice for $${inv.amount} to ${inv.merchantName}.`,
-          action: "prepare_payment",
-          targetInvoiceId: inv.invoiceId,
-        };
-      }
-    }
-
-    // First unpaid invoice default if user just said "pay my bill"
     if (unpaidInvoices.length > 0) {
       const first = unpaidInvoices[0];
       return {
@@ -181,30 +212,27 @@ function heuristicAssistant({ lastMessageText, unpaidInvoices }) {
 }
 
 /**
- * Main Assistant Orchestration:
- * Receives messages & user session, fetches user's unpaid invoices from DB,
- * determines intent, executes deterministic MatchCheck if paying an invoice,
- * persists PaymentCheck, and returns structured response.
+ * Main Assistant Orchestration
  */
 export async function processAssistantRequest({ messages, context = {}, user = null }) {
   await connectDB();
 
+  const isSeller = user?.role === "seller";
   const buyerEmail = user?.email || "buyer@saypay.app";
+  const merchantKey = user?.merchantKey || "greenleaf-demo-store";
 
-  // 1. Fetch live unpaid invoices for this buyer from MongoDB
-  const unpaidInvoices = await Invoice.find({
-    buyerEmail: buyerEmail.toLowerCase(),
-    status: "UNPAID",
-  })
+  // Fetch live unpaid invoices from MongoDB
+  const unpaidInvoices = await Invoice.find(
+    isSeller ? { merchantKey, status: "UNPAID" } : { buyerEmail: buyerEmail.toLowerCase(), status: "UNPAID" }
+  )
     .sort({ dueDate: 1 })
     .lean();
 
   const lastUserMsg = [...messages].reverse().find((m) => m.role === "user")?.content || "";
 
-  // 2. Decide intent via Groq (with fallback to heuristic)
+  // 1. Decide intent via Groq
   let intentDecision = null;
 
-  // Check if context explicitly selected an invoiceId
   if (context.selectedInvoiceId) {
     const matched = unpaidInvoices.find((i) => i.invoiceId === context.selectedInvoiceId);
     if (matched) {
@@ -218,20 +246,58 @@ export async function processAssistantRequest({ messages, context = {}, user = n
 
   if (!intentDecision) {
     try {
-      intentDecision = await callGroqAssistant({ messages, unpaidInvoices, user });
+      intentDecision = await callGroqAssistant({ messages, unpaidInvoices, user, isSeller });
     } catch (err) {
       console.warn("Groq assistant call failed, falling back to heuristic:", err?.message || err);
-      intentDecision = heuristicAssistant({ lastMessageText: lastUserMsg, unpaidInvoices });
+      intentDecision = heuristicAssistant({ lastMessageText: lastUserMsg, unpaidInvoices, isSeller });
     }
   }
 
   if (!intentDecision) {
-    intentDecision = heuristicAssistant({ lastMessageText: lastUserMsg, unpaidInvoices });
+    intentDecision = heuristicAssistant({ lastMessageText: lastUserMsg, unpaidInvoices, isSeller });
   }
 
-  const { reply, action, targetInvoiceId } = intentDecision;
+  const { reply, action, targetInvoiceId, invoiceDetails } = intentDecision;
 
-  // 3. Handle action outcomes
+  // 2. Handle Merchant Invoice Creation
+  if (isSeller && (action === "create_invoice" || invoiceDetails)) {
+    const details = invoiceDetails || {};
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    const invoiceId = `GL-${randomNum}`;
+
+    const newInvoice = await Invoice.create({
+      invoiceId,
+      merchantKey,
+      merchantName: user?.name || "GreenLeaf Demo Store",
+      buyerEmail: (details.buyerEmail || "buyer@saypay.app").toLowerCase(),
+      amount: details.amount ? parseFloat(details.amount).toFixed(2) : "35.00",
+      currency: details.currency || "USD",
+      description: details.description || "Artisan organic supplies order",
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      status: "UNPAID",
+    });
+
+    return {
+      reply:
+        reply ||
+        `I've created invoice ${newInvoice.invoiceId} for ${newInvoice.buyerEmail} ($${newInvoice.amount}). It has been added to the customer's pending bills.`,
+      action: "invoice_created",
+      data: {
+        invoice: {
+          invoiceId: newInvoice.invoiceId,
+          merchantName: newInvoice.merchantName,
+          buyerEmail: newInvoice.buyerEmail,
+          amount: newInvoice.amount,
+          currency: newInvoice.currency,
+          description: newInvoice.description,
+          dueDate: newInvoice.dueDate,
+          status: newInvoice.status,
+        },
+      },
+    };
+  }
+
+  // 3. Handle Show Invoices
   if (action === "show_invoices") {
     return {
       reply: reply || `You have ${unpaidInvoices.length} unpaid invoices.`,
@@ -251,10 +317,9 @@ export async function processAssistantRequest({ messages, context = {}, user = n
     };
   }
 
+  // 4. Handle Show History
   if (action === "show_history") {
-    const recentTxs = await Transaction.find({
-      paymentStatus: "COMPLETED",
-    })
+    const recentTxs = await Transaction.find({ paymentStatus: "COMPLETED" })
       .sort({ createdAt: -1 })
       .limit(5)
       .lean();
@@ -276,6 +341,7 @@ export async function processAssistantRequest({ messages, context = {}, user = n
     };
   }
 
+  // 5. Handle Prepare Payment (Buyer Flow)
   if (action === "prepare_payment") {
     let invoice = null;
     if (targetInvoiceId) {
@@ -293,7 +359,6 @@ export async function processAssistantRequest({ messages, context = {}, user = n
       };
     }
 
-    // Run deterministic MatchCheck (Safety Engine)
     const intentFields = {
       recipientName: invoice.merchantName,
       merchantKey: invoice.merchantKey,
@@ -319,7 +384,6 @@ export async function processAssistantRequest({ messages, context = {}, user = n
 
     const checkId = crypto.randomUUID();
 
-    // Persist PaymentCheck in MongoDB
     await PaymentCheck.create({
       checkId,
       invoiceId: invoice.invoiceId,
@@ -381,7 +445,6 @@ export async function processAssistantRequest({ messages, context = {}, user = n
     };
   }
 
-  // Default: conversational reply with no active card
   return {
     reply: reply || "How can I help you today?",
     action: action || "none",

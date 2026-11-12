@@ -22,15 +22,12 @@ const MobileTabBar = dynamic(() => import("./MobileTabBar.js"), {
 export default function AppShell({ children }) {
   const pathname = usePathname();
 
-  // Clean standalone layout for auth pages and full-screen assist page
-  const isStandalone =
-    pathname === "/login" ||
-    pathname === "/signup" ||
-    pathname === "/new-check";
+  // Clean standalone layout for auth pages
+  const isStandalone = pathname === "/login" || pathname === "/signup";
 
   if (isStandalone) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC]">
+      <div className="min-h-screen bg-[#F7F8FA]">
         {children}
       </div>
     );

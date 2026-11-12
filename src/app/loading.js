@@ -1,6 +1,6 @@
 import React from "react";
-import { DashboardSkeleton } from "../components/ui/LoadingSkeletons.js";
+import LoadingScreen from "../components/ui/LoadingScreen.js";
 
-export default function Loading() {
-  return <DashboardSkeleton />;
+export default function RootLoading() {
+  return <LoadingScreen fullscreen message="Loading SayPay" subtext="Syncing safety engine and session" />;
 }
