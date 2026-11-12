@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import FlowPageLayout from "../../components/flow/FlowPageLayout.js";
@@ -12,6 +12,22 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
 
   const [intentText, setIntentText] = useState(DEMO_PAYMENT.voiceTranscript);
   const [requestText, setRequestText] = useState(DEMO_PAYMENT.requestSnippet);
+  const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState("");
+  const [error, setError] = useState(null);
+
+  // Conversational confirmation state for the interactive flow
+  const [checkResult, setCheckResult] = useState(null);
+  const [paying, setPaying] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedIntent = sessionStorage.getItem("saypay_intent");
+      const storedRequest = sessionStorage.getItem("saypay_request");
+      if (storedIntent) setIntentText(storedIntent);
+      if (storedRequest) setRequestText(storedRequest);
+    }
+  }, []);
 
   const intentReady = intentText.trim().length > 0;
   const requestReady = requestText.trim().length > 0;
@@ -33,29 +49,98 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
     }
   };
 
-  const handleCheckPayment = () => {
-    const isProblematic =
-      requestText.includes("125.00") ||
-      requestText.includes("Untrusted Escrow") ||
-      requestText.includes("OVERRIDE") ||
-      requestText.includes("Gift Card") ||
-      intentText.includes("GL-204 again");
-
-    if (isProblematic) {
-      router.push("/new-check/review");
-    } else {
-      router.push("/checks/chk_demo_204");
-    }
+  const handleCheckPayment = async () => {
     if (!intentReady || !requestReady) return;
-    router.push("/checks/chk_demo_204");
+    setLoading(true);
+    setLoadingStep("AI analyzing intent & screening request...");
+    setError(null);
+
+    try {
+      const res = await fetch("/api/payment/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          intentText,
+          requestText,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to evaluate safety check");
+      }
+
+      setCheckResult(data);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("saypay_last_check", JSON.stringify(data));
+      }
+
+      // If CLEAR, let user confirm right here or proceed to Stage 2
+      if (data.status === "CLEAR") {
+        setLoadingStep("MatchCheck CLEAR. Awaiting human confirmation...");
+      } else if (data.status === "REVIEW") {
+        router.push(`/new-check/review?checkId=${data.checkId}`);
+      } else {
+        router.push(`/new-check/blocked?checkId=${data.checkId}`);
+      }
+    } catch (err) {
+      console.error("Check payment failed:", err);
+      setError(err.message || "An unexpected error occurred while checking payment.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Immediate 1-click or voice "Yes" execution into PayPal Sandbox
+  const handleConfirmAndPay = async () => {
+    if (!checkResult || !checkResult.checkId) return;
+    setPaying(true);
+    setError(null);
+
+    try {
+      // 1. Create order
+      const createRes = await fetch("/api/paypal/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ checkId: checkResult.checkId }),
+      });
+      const orderData = await createRes.json();
+      if (!createRes.ok) {
+        const msg = typeof orderData.error === "object" ? orderData.error?.message : orderData.error;
+        throw new Error(msg || "Failed to create PayPal order");
+      }
+
+      const orderId = orderData.orderId;
+
+      // 2. Capture order in PayPal sandbox
+      const captureRes = await fetch("/api/paypal/capture-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ checkId: checkResult.checkId, orderId }),
+      });
+      const captureData = await captureRes.json();
+      if (!captureRes.ok) {
+        const msg = typeof captureData.error === "object" ? captureData.error?.message : captureData.error;
+        throw new Error(msg || "Failed to capture PayPal order");
+      }
+
+      // 3. Navigate to authoritative verified receipt
+      router.push(`/result/${captureData.transactionId || checkResult.checkId}`);
+    } catch (err) {
+      console.error("Payment execution failed:", err);
+      const msg = typeof err === "object" && err?.message ? err.message : String(err);
+      setError(msg || "Payment execution failed in PayPal sandbox.");
+      setPaying(false);
+    }
   };
 
   return (
     <FlowPageLayout
       stage={1}
-      status="Capture"
-      tone="clear"
-      auditCount={0}
+      status={checkResult ? checkResult.status : "Capture"}
+      tone={checkResult?.status === "CLEAR" ? "clear" : "pending"}
+      auditCount={checkResult ? 3 : 0}
       onOpenAuditLog={onOpenAuditLog}
       eyebrow="New payment check"
       title="Capture your intent and the request"
@@ -90,6 +175,107 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
       }
     >
       <div className="space-y-5">
+        {/* Error notification banner */}
+        {error && (
+          <div className="flex items-start gap-3 rounded-2xl border border-[#FECACA] bg-[#FEF2F2] p-4 text-[#991B1B]">
+            <span className="material-symbols-outlined text-[20px] text-[#DC2626]">
+              error
+            </span>
+            <div className="flex-1">
+              <p className="font-label-md text-label-md font-semibold">
+                Unable to complete check
+              </p>
+              <p className="font-body-sm text-body-sm">{error}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setError(null)}
+              className="text-secondary hover:text-[#DC2626]"
+            >
+              <span className="material-symbols-outlined text-[18px]">close</span>
+            </button>
+          </div>
+        )}
+
+        {/* Human Confirmation Banner (Triggered after MatchCheck returns CLEAR) */}
+        {checkResult && checkResult.status === "CLEAR" && (
+          <section
+            aria-live="polite"
+            className="rounded-2xl border-2 border-[#A7F3D0] bg-[#F0FDF4] p-5 shadow-md animate-in fade-in duration-200"
+          >
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex items-start gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EAF7F1] text-[#107E3E]">
+                  <span className="material-symbols-outlined text-[24px]">
+                    verified_user
+                  </span>
+                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-headline-sm text-headline-sm font-bold text-on-surface">
+                      MatchCheck Passed · CLEAR
+                    </h3>
+                    <span className="rounded-full border border-[#A7F3D0] bg-[#EAF7F1] px-2.5 py-0.5 font-label-sm text-label-sm font-bold text-[#107E3E]">
+                      Zero Mismatches
+                    </span>
+                  </div>
+                  <p className="mt-1 font-body-sm text-body-sm text-secondary">
+                    Payee, amount (
+                    <strong className="text-on-surface">
+                      {checkResult.intent?.currency || "USD"}{" "}
+                      {checkResult.intent?.amount || "12.50"}
+                    </strong>
+                    ), and invoice reference (
+                    <code className="font-code-sm text-primary">
+                      {checkResult.intent?.reference || "GL-204"}
+                    </code>
+                    ) matched exactly.
+                  </p>
+                  <p className="mt-2 font-label-md text-label-md font-semibold text-primary">
+                    Say or click &ldquo;Yes, Pay with PayPal&rdquo; to complete the sandbox transaction.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 sm:items-end">
+                <button
+                  type="button"
+                  id="confirm-pay-now-button"
+                  disabled={paying}
+                  onClick={handleConfirmAndPay}
+                  className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-primary-container px-6 py-2.5 font-label-md text-label-md font-bold text-white shadow-sm hover:bg-primary active:scale-[0.98] transition-all disabled:opacity-60"
+                >
+                  {paying ? (
+                    <>
+                      <span className="material-symbols-outlined animate-spin text-[18px]">
+                        progress_activity
+                      </span>
+                      <span>Processing PayPal sandbox…</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-[18px]">
+                        shopping_cart_checkout
+                      </span>
+                      <span>Yes, Pay with PayPal</span>
+                    </>
+                  )}
+                </button>
+
+                <Link
+                  href={`/checks/${checkResult.checkId}`}
+                  className="inline-flex items-center gap-1 font-label-sm text-label-sm font-semibold text-secondary hover:text-primary"
+                >
+                  <span>Or review details step-by-step</span>
+                  <span className="material-symbols-outlined text-[14px]">
+                    arrow_forward
+                  </span>
+                </Link>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Intent */}
         <section className="rounded-2xl border border-[#DFE5E8] bg-surface-container-lowest p-4 shadow-sm sm:p-5">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -268,7 +454,7 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
                 Request
               </span>
               <span className="font-body-sm text-body-sm text-secondary">
-                Both sources are needed before the check can run.
+                {loadingStep || "Both sources are needed before the check can run."}
               </span>
             </div>
 
@@ -279,6 +465,7 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
                   onClick={() => {
                     setIntentText("");
                     setRequestText("");
+                    setCheckResult(null);
                   }}
                   className="min-h-[44px] rounded-[10px] border border-[#DFE5E8] bg-white px-4 py-2.5 font-label-md text-label-md font-semibold text-secondary hover:bg-[#F7F8FA]"
                 >
@@ -300,17 +487,29 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
 
               <button
                 type="button"
+                id="check-payment-button"
                 onClick={handleCheckPayment}
-                disabled={!intentReady || !requestReady}
+                disabled={!intentReady || !requestReady || loading}
                 className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[10px] bg-primary-container px-5 py-2.5 font-label-lg text-label-lg font-semibold text-white shadow-sm transition-all hover:bg-primary disabled:cursor-not-allowed disabled:bg-[#DFE5E8] disabled:text-[#586672]"
               >
-                <span className="material-symbols-outlined text-[19px]">
-                  search_check
-                </span>
-                Check this payment
-                <span className="material-symbols-outlined text-[17px]">
-                  arrow_forward
-                </span>
+                {loading ? (
+                  <>
+                    <span className="material-symbols-outlined animate-spin text-[19px]">
+                      progress_activity
+                    </span>
+                    <span>Checking payment…</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-[19px]">
+                      search_check
+                    </span>
+                    <span>Check this payment</span>
+                    <span className="material-symbols-outlined text-[17px]">
+                      arrow_forward
+                    </span>
+                  </>
+                )}
               </button>
             </div>
           </div>

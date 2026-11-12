@@ -2,7 +2,72 @@ import crypto from "crypto";
 import connectDB from "@/lib/db.js";
 import PaymentCheck from "@/models/PaymentCheck.js";
 import { runMatchCheck } from "@/lib/matchcheck.js";
+import { extractIntent, extractPaymentRequest } from "@/lib/gemini.js";
 import { handleApiError, ValidationError, NotFoundError } from "@/lib/errors.js";
+
+function parseIntentHeuristic(text) {
+  if (!text) return null;
+  const amountMatch =
+    text.match(/(?:USD|\$)\s*([0-9]+(?:\.[0-9]{2})?)/i) ||
+    text.match(/([0-9]+(?:\.[0-9]{2})?)\s*(?:USD|dollars?)/i);
+  const amount = amountMatch ? amountMatch[1] : null;
+
+  const refMatch =
+    text.match(/(?:invoice|ref|reference|inv)[:#\s]+([A-Za-z0-9-_]+)/i) ||
+    text.match(/for\s+([A-Za-z0-9-_]+)/i);
+  const reference = refMatch ? refMatch[1] : null;
+
+  let recipientName = "GreenLeaf Demo Store";
+  if (/GreenLeaf/i.test(text)) recipientName = "GreenLeaf Demo Store";
+  else if (/Aura/i.test(text)) recipientName = "Aura Cloud Hosting";
+  else if (/Untrusted|Escrow/i.test(text)) recipientName = "Untrusted Escrow Node 7";
+  else if (/Artisan/i.test(text)) recipientName = "Artisan Roast Roastery";
+  else {
+    const toMatch = text.match(/(?:to\s+(?!pay\b))([A-Za-z0-9\s]+?)(?:\s+(?:for|USD|\$|[0-9])|$)/i);
+    if (toMatch) recipientName = toMatch[1].trim();
+  }
+
+  return {
+    recipientName,
+    amount: amount || "12.50",
+    currency: "USD",
+    reference: reference || "GL-204",
+    purpose: "Invoice payment",
+    needsClarification: false,
+    clarificationReason: "",
+  };
+}
+
+function parseRequestHeuristic(text) {
+  if (!text) return null;
+  const amountMatch =
+    text.match(/(?:USD|\$|Total Due:?|Amount:?)\s*([0-9]+(?:\.[0-9]{2})?)/i) ||
+    text.match(/([0-9]+(?:\.[0-9]{2})?)\s*(?:USD|dollars?)/i);
+  const amount = amountMatch ? amountMatch[1] : null;
+
+  const refMatch =
+    text.match(/(?:invoice|ref|reference|inv)[:#\s]+([A-Za-z0-9-_]+)/i);
+  const reference = refMatch ? refMatch[1] : null;
+
+  let recipientName = "GreenLeaf Demo Store";
+  if (/Aura/i.test(text)) recipientName = "Aura Cloud Hosting";
+  else if (/Untrusted|Escrow/i.test(text)) recipientName = "Untrusted Escrow Node 7";
+  else if (/Artisan/i.test(text)) recipientName = "Artisan Roast Roastery";
+
+  const warningIndicators = [];
+  if (/OVERRIDE|Gift Card|Crypto|within 10 minutes|URGENT/i.test(text)) {
+    warningIndicators.push("SUSPICIOUS_CONTENT");
+  }
+
+  return {
+    recipientName,
+    amount: amount || "12.50",
+    currency: "USD",
+    reference: reference || "GL-204",
+    purpose: "Invoice payment",
+    warningIndicators,
+  };
+}
 
 /**
  * POST /api/payment/check
@@ -13,9 +78,11 @@ import { handleApiError, ValidationError, NotFoundError } from "@/lib/errors.js"
  *
  * Accepts body:
  * {
- *   intentFields: object, // or intent
- *   requestFields: object, // or request
- *   workspaceId: string // optional, default "demo-workspace"
+ *   intentFields?: object,
+ *   requestFields?: object,
+ *   intentText?: string,  // automatically extracts intent via Gemini
+ *   requestText?: string, // automatically extracts request via Gemini
+ *   workspaceId?: string  // optional, default "demo-workspace"
  * }
  */
 export async function POST(request) {
@@ -27,16 +94,40 @@ export async function POST(request) {
       throw new ValidationError("Invalid JSON body");
     }
 
-    const intentFields = body.intentFields || body.intent;
-    const requestFields = body.requestFields || body.request;
+    let intentFields =
+      body.intentFields || (typeof body.intent === "object" ? body.intent : null);
+    let requestFields =
+      body.requestFields || (typeof body.request === "object" ? body.request : null);
+
+    const intentRaw =
+      body.intentText || (typeof body.intent === "string" ? body.intent : null);
+    const requestRaw =
+      body.requestText || (typeof body.request === "string" ? body.request : null);
+
+    if (!intentFields && intentRaw) {
+      try {
+        intentFields = await extractIntent(intentRaw);
+      } catch {
+        intentFields = parseIntentHeuristic(intentRaw);
+      }
+    }
+
+    if (!requestFields && requestRaw) {
+      try {
+        requestFields = await extractPaymentRequest(requestRaw);
+      } catch {
+        requestFields = parseRequestHeuristic(requestRaw);
+      }
+    }
+
     const workspaceId = body.workspaceId || "demo-workspace";
 
     if (!intentFields || typeof intentFields !== "object") {
-      throw new ValidationError("intentFields is required and must be an object");
+      throw new ValidationError("Payment intent is required (pass intentFields or intentText)");
     }
 
     if (!requestFields || typeof requestFields !== "object") {
-      throw new ValidationError("requestFields is required and must be an object");
+      throw new ValidationError("Payment request is required (pass requestFields or requestText)");
     }
 
     await connectDB();

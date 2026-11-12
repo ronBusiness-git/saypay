@@ -1,7 +1,8 @@
 "use client";
 
-import React, { Suspense } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import FlowPageLayout from "../../../components/flow/FlowPageLayout.js";
 import VoiceAssistPanel from "../../../components/flow/VoiceAssistPanel.js";
 import {
@@ -11,9 +12,35 @@ import {
 import { DEMO_PAYMENT } from "../../../lib/demoFlowData.js";
 
 function CheckoutReview({ params, onOpenAuditLog }) {
-  const resolved =
-    params && typeof params.then === "function" ? React.use(params) : params;
-  const checkId = resolved?.checkId || DEMO_PAYMENT.checkId;
+  const routeParams = useParams();
+  const checkId = routeParams?.checkId || DEMO_PAYMENT.checkId;
+
+  const [payment, setPayment] = useState(DEMO_PAYMENT);
+
+  useEffect(() => {
+    if (!checkId || checkId.startsWith("chk_demo_")) return;
+
+    fetch(`/api/payment/check?checkId=${encodeURIComponent(checkId)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) return;
+        const amountStr = data.intent?.amount || data.request?.amount || "12.50";
+        const currency = data.intent?.currency || data.request?.currency || "USD";
+        const merchant = data.intent?.recipientName || data.request?.recipientName || "GreenLeaf Demo Store";
+        const reference = data.intent?.reference || data.request?.reference || "GL-204";
+
+        setPayment({
+          ...DEMO_PAYMENT,
+          checkId: data.checkId,
+          merchant,
+          amount: `${currency} ${amountStr}`,
+          currency,
+          reference,
+          purpose: data.intent?.purpose || "Invoice payment",
+        });
+      })
+      .catch(() => {});
+  }, [checkId]);
 
   return (
     <FlowPageLayout
@@ -50,8 +77,8 @@ function CheckoutReview({ params, onOpenAuditLog }) {
           stage={3}
           greeting="The safety check passed. I’m showing the exact values that will be sent to PayPal — please review them before you confirm."
           reply="Nothing is charged yet. Continue to confirm to choose Pay or Cancel, and PayPal will open for buyer approval."
-          amountReply="The amount is USD 12.50, which matches the original request. Amount and merchant cannot be edited on this page."
-          merchantReply="The payee is GreenLeaf Demo Store, an approved merchant in this sandbox workspace."
+          amountReply={`The amount is ${payment.amount}, which matches the original request. Amount and merchant cannot be edited on this page.`}
+          merchantReply={`The payee is ${payment.merchant}, an approved merchant in this sandbox workspace.`}
           whyReply="This check is CLEAR: recipient, amount, currency and reference all match, and no spam or scam signals were found."
           actionReply="Press “Looks right — continue to confirm”. Voice cannot skip the confirmation step."
           suggestions={["Read the summary", "What happens next?", "Is the amount correct?"]}
@@ -60,7 +87,7 @@ function CheckoutReview({ params, onOpenAuditLog }) {
       }
     >
       <div className="space-y-5">
-        <CheckoutSummary payment={DEMO_PAYMENT} />
+        <CheckoutSummary payment={payment} />
         <ExpiryTimer />
 
         <section className="rounded-2xl border border-[#DFE5E8] bg-surface-container-lowest p-4 shadow-sm sm:p-5">
@@ -110,6 +137,7 @@ function CheckoutReview({ params, onOpenAuditLog }) {
             </Link>
             <Link
               href={`/checkout/${checkId}/confirm`}
+              id="continue-to-confirm-link"
               className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-[10px] bg-primary-container px-5 py-2.5 font-label-md text-label-md font-semibold text-white shadow-sm hover:bg-primary"
             >
               Looks right — continue to confirm

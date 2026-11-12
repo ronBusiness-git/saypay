@@ -60,6 +60,7 @@ export default function VoiceAssistPanel({
   const replyTimerRef = useRef(null);
   const inputRef = useRef(null);
   const scrollRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   useEffect(() => {
     const node = scrollRef.current;
@@ -70,6 +71,9 @@ export default function VoiceAssistPanel({
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
       if (replyTimerRef.current) clearTimeout(replyTimerRef.current);
+      if (recognitionRef.current) {
+        try { recognitionRef.current.abort(); } catch {}
+      }
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
@@ -140,6 +144,44 @@ export default function VoiceAssistPanel({
     onSuggestion?.(trimmed);
   };
 
+  const startSpeechRecognition = () => {
+    if (typeof window === "undefined") return false;
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return false;
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = "en-US";
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onresult = (event) => {
+        if (event.results && event.results[0] && event.results[0][0]) {
+          const transcript = event.results[0][0].transcript;
+          if (transcript) {
+            setListening(false);
+            handleUserText(transcript, true);
+          }
+        }
+      };
+
+      recognition.onerror = () => {
+        finishVoiceCapture();
+      };
+
+      recognition.onend = () => {
+        setListening(false);
+      };
+
+      recognition.start();
+      recognitionRef.current = recognition;
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const finishVoiceCapture = () => {
     setListening(false);
     handleUserText(samplePhrase, true);
@@ -153,6 +195,9 @@ export default function VoiceAssistPanel({
     }
 
     if (listening) {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch {}
+      }
       if (timerRef.current) clearTimeout(timerRef.current);
       finishVoiceCapture();
       return;
@@ -161,8 +206,12 @@ export default function VoiceAssistPanel({
     stopSpeaking();
     setMode("voice");
     setListening(true);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(finishVoiceCapture, 2100);
+
+    const started = startSpeechRecognition();
+    if (!started) {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(finishVoiceCapture, 2100);
+    }
   };
 
   const handleSend = () => {

@@ -28,6 +28,8 @@ export async function GET(request) {
 
     return Response.json({
       items,
+      transactions: items,
+      total,
       pagination: {
         page,
         limit,

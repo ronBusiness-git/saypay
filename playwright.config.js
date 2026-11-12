@@ -2,18 +2,24 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
-  timeout: 45000,
+  timeout: 90000,
   retries: 0,
   use: {
+    headless: false,
+    channel: 'chrome',
     baseURL: 'http://127.0.0.1:3005',
-    extraHTTPHeaders: {
-      'Content-Type': 'application/json',
+    viewport: { width: 1280, height: 800 },
+    launchOptions: {
+      slowMo: 400, // Slow down operations by 400ms so the user can easily observe the automated browser actions
     },
   },
-  webServer: {
-    command: 'npx next start -p 3005',
-    url: 'http://127.0.0.1:3005',
-    reuseExistingServer: false,
-    timeout: 60000,
-  },
+  projects: [
+    {
+      name: 'Google Chrome',
+      use: {
+        channel: 'chrome',
+        headless: false,
+      },
+    },
+  ],
 });

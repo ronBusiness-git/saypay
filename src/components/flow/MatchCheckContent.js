@@ -343,7 +343,7 @@ export default function MatchCheckContent({
           {state.explanation}
         </p>
 
-        {state.remediations.length > 0 && (
+        {Array.isArray(state.remediations) && state.remediations.length > 0 && (
           <div className="mt-3 rounded-xl border border-[#FDE68A] bg-[#FEF3C7]/40 p-3">
             <p className="font-label-sm text-label-sm font-bold uppercase tracking-wider text-[#B45309]">
               What needs to change
