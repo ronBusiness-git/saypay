@@ -115,10 +115,11 @@ export function ActionCell(params) {
     <Link
       href={href}
       onClick={(e) => e.stopPropagation()}
-      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-[#A7F3D0] bg-[#EAF7F1] px-2.5 py-1 text-[12px] font-semibold text-[#006451] transition-colors hover:bg-[#087F68] hover:text-white"
+      aria-label="View receipt"
+      title="View receipt"
+      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#A7F3D0] bg-[#EAF7F1] text-[#006451] transition-colors hover:bg-[#087F68] hover:text-white"
     >
-      <span className="material-symbols-outlined text-[14px]">receipt_long</span>
-      Receipt
+      <span className="material-symbols-outlined text-[16px]">receipt_long</span>
     </Link>
   );
 }
@@ -197,12 +198,12 @@ const DASHBOARD_COLUMNS = [
   {
     field: "action",
     headerName: "RECEIPT",
-    width: 120,
-    minWidth: 108,
+    width: 84,
+    minWidth: 76,
     sortable: false,
     valueGetter: (params) => params.data?.action?.label || "Receipt",
     cellRenderer: ActionCell,
-    cellStyle: RIGHT_STYLE,
+    cellStyle: CENTER_STYLE,
   },
 ];
 
@@ -257,11 +258,12 @@ const HISTORY_COLUMNS = [
   {
     field: "action",
     headerName: "RECEIPT",
-    width: 136,
+    width: 84,
+    minWidth: 76,
     sortable: false,
     valueGetter: (params) => params.data?.action?.label || "Receipt",
     cellRenderer: ActionCell,
-    cellStyle: RIGHT_STYLE,
+    cellStyle: CENTER_STYLE,
   },
 ];
 
