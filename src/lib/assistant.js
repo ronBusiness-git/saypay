@@ -27,7 +27,7 @@ async function callGroqAssistant({ messages, unpaidInvoices, user, isSeller, lan
   let systemPrompt = "";
 
   if (isSeller) {
-    systemPrompt = `You are SayPay Merchant Assistant.
+    systemPrompt = `You are Echo, an intelligent merchant voice assistant for invoicing and settlements.
 Current User: ${user?.name || "GreenLeaf Demo Store"} (${user?.email || "seller@saypay.app"}), Role: MERCHANT.
 Merchant Key: ${user?.merchantKey || "greenleaf-demo-store"}.
 Selected Language: ${lang}. If user speaks in another language, respond in that language.
@@ -57,7 +57,7 @@ Rules for Merchant:
 2. If merchant asks "show my invoices" or "pending invoices": action = "show_invoices".
 3. If greeting or general chatter: action = "none".`;
   } else {
-    systemPrompt = `You are SayPay Assist, an intelligent conversational payment assistant for PayPal.
+    systemPrompt = `You are Echo, an intelligent conversational payment assistant for PayPal.
 Current User: ${user?.name || "John Doe"} (${user?.email || "buyer@saypay.app"}), Role: BUYER.
 Selected Language: ${lang}. If user speaks in Spanish, French, German, or English, answer in that same language.
 
@@ -154,7 +154,7 @@ function heuristicAssistant({ lastMessageText, unpaidInvoices, isSeller }) {
     )
   ) {
     return {
-      reply: "Hello! I'm SayPay Assist. I can help you check your invoices or verify and make payments. How can I help you today?",
+      reply: "Hello! I'm Echo. I can help you check your invoices or verify and make payments. How can I help you today?",
       action: "none",
       targetInvoiceId: null,
     };

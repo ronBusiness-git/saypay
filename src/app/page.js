@@ -194,7 +194,7 @@ export default function DashboardPage() {
             <span className="material-symbols-outlined text-[19px]">
               {isMerchant ? "add_notes" : "record_voice_over"}
             </span>
-            {isMerchant ? "Create Invoice (Voice AI)" : "Ask SayPay"}
+            {isMerchant ? "Create Invoice (Voice AI)" : "Ask Echo"}
           </Link>
         </div>
       </div>
@@ -287,8 +287,8 @@ export default function DashboardPage() {
             role={isMerchant ? "seller" : "buyer"}
             greeting={
               isMerchant
-                ? "Hi! I’m SayPay Merchant Assist. Say what invoice you’d like to create, or ask to view pending payments."
-                : "Hi, I’m SayPay Assist. Tell me what bill you’d like to pay, or ask me to show your unpaid invoices."
+                ? "Hi! I’m Echo. Say what invoice you’d like to create, or ask to view pending payments."
+                : "Hi, I’m Echo. Tell me what bill you’d like to pay, or ask me to show your unpaid invoices."
             }
             suggestions={
               isMerchant
@@ -303,7 +303,12 @@ export default function DashboardPage() {
                   ]
             }
             onAssistantResult={(result) => {
-              if (result?.action === "prepare_payment") {
+              if (result?.action === "prepare_payment" && result.data?.payment) {
+                if (typeof window !== "undefined") {
+                  try {
+                    sessionStorage.setItem("pendingPaymentCheck", JSON.stringify(result.data.payment));
+                  } catch {}
+                }
                 router.push("/new-check");
               } else if (result?.action === "invoice_created") {
                 // Refresh dashboard to show the new invoice

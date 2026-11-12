@@ -80,14 +80,22 @@ export async function POST(request) {
     // 5. If this check is linked to invoice(s), mark them as PAID
     try {
       const paymentCheck = await PaymentCheck.findOne({ checkId });
+      const candidates = [];
       if (paymentCheck?.invoiceId) {
-        const ids = paymentCheck.invoiceId
-          .split(/[,;\s]+/)
-          .map((s) => s.trim())
-          .filter(Boolean);
+        candidates.push(
+          ...paymentCheck.invoiceId.split(/[,;\s]+/).map((s) => s.trim())
+        );
+      }
+      if (transaction?.reference) {
+        candidates.push(
+          ...transaction.reference.split(/[,;\s]+/).map((s) => s.trim())
+        );
+      }
+      const uniqueIds = [...new Set(candidates.filter(Boolean))];
 
+      if (uniqueIds.length > 0) {
         await Invoice.updateMany(
-          { invoiceId: { $in: ids } },
+          { invoiceId: { $in: uniqueIds } },
           {
             $set: {
               status: "PAID",

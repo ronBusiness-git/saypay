@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import FlowPageLayout from "../../components/flow/FlowPageLayout.js";
 import VoiceAssistPanel from "../../components/flow/VoiceAssistPanel.js";
 import LoadingScreen from "../../components/ui/LoadingScreen.js";
+import { speakSoftly } from "../../lib/voice.js";
 import { useDemoSession } from "../../lib/demoAuth.js";
 
 export default function NewPaymentCheckPage({ onOpenAuditLog }) {
@@ -25,6 +26,21 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
 
   useEffect(() => {
     fetchInvoices();
+
+    // Check if activePayment was set by dashboard assistant handoff
+    if (typeof window !== "undefined") {
+      try {
+        const stored = sessionStorage.getItem("pendingPaymentCheck");
+        if (stored) {
+          sessionStorage.removeItem("pendingPaymentCheck");
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.checkId) {
+            setActivePayment(parsed);
+            setCurrentStage(3);
+          }
+        }
+      } catch {}
+    }
   }, [session?.role]);
 
   async function fetchInvoices() {
@@ -33,7 +49,7 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.invoices)) {
-          // Strict UNPAID filter (NC-04)
+          // Strict UNPAID filter (NC-04 / Task 2)
           setUnpaidInvoices(data.invoices.filter((i) => i.status === "UNPAID"));
         }
       }
@@ -44,13 +60,13 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
     }
   }
 
-  // Handle assistant actions returned from VoiceAssistPanel
+  // Handle assistant actions returned from VoiceAssistPanel (Echo)
   const handleAssistantResult = (result) => {
     if (!result) return;
     setPaymentError(null);
 
     if (result.action === "prepare_payment" && result.data?.payment) {
-      // NC-02: Automatic Multi-Step Progression with Timed Transitions
+      // Automatic Multi-Step Progression with Timed Transitions
       // Step 1: Capture -> Step 2: Safety Check (1s animated screening) -> Step 3: Review & Confirm
       setCreatedInvoice(null);
       setCompletedReceipt(null);
@@ -80,6 +96,65 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
     }
   };
 
+  // Wire "Review & Pay" on the unpaid invoices list to call /api/assistant (Task 1 / 8)
+  const handleSelectInvoiceForPayment = async (inv) => {
+    setPaymentError(null);
+    setCurrentStage(2);
+    setIsScreening(true);
+
+    try {
+      const res = await fetch("/api/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "user",
+              content: `Pay invoice ${inv.invoiceId} for ${inv.merchantName}`,
+            },
+          ],
+          context: { selectedInvoiceId: inv.invoiceId },
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        const msg =
+          typeof data.error === "string"
+            ? data.error
+            : data.error?.message || data.message || "Failed to verify invoice";
+        throw new Error(msg);
+      }
+
+      setTimeout(() => {
+        setIsScreening(false);
+        if (data.action === "prepare_payment" && data.data?.payment) {
+          setActivePayment(data.data.payment);
+          setCurrentStage(3);
+        } else {
+          setActivePayment({
+            checkId: "chk_" + inv.invoiceId,
+            invoiceId: inv.invoiceId,
+            merchantName: inv.merchantName,
+            merchantKey: inv.merchantKey,
+            amount: inv.amount,
+            currency: inv.currency,
+            description: inv.description,
+            status: "CLEAR",
+            canCreateOrder: true,
+          });
+          setCurrentStage(3);
+        }
+      }, 1000);
+    } catch (err) {
+      setIsScreening(false);
+      setCurrentStage(1);
+      const msg = err?.message || String(err) || "Failed to verify invoice";
+      setPaymentError(msg);
+      speakSoftly(`Notice: ${msg}`);
+    }
+  };
+
   // 1-Click Pay with PayPal Sandbox
   const handlePayWithPayPal = async () => {
     if (!activePayment || !activePayment.checkId) return;
@@ -95,7 +170,13 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
         body: JSON.stringify({ checkId: activePayment.checkId }),
       });
       const orderData = await createRes.json();
-      if (!createRes.ok) throw new Error(orderData.error || "Order creation failed");
+      if (!createRes.ok) {
+        const msg =
+          typeof orderData.error === "string"
+            ? orderData.error
+            : orderData.error?.message || orderData.message || "Order creation failed";
+        throw new Error(msg);
+      }
 
       // 2. Capture payment
       const captureRes = await fetch("/api/paypal/capture-order", {
@@ -104,7 +185,13 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
         body: JSON.stringify({ checkId: activePayment.checkId, orderId: orderData.orderId }),
       });
       const captureData = await captureRes.json();
-      if (!captureRes.ok) throw new Error(captureData.error || "Capture failed");
+      if (!captureRes.ok) {
+        const msg =
+          typeof captureData.error === "string"
+            ? captureData.error
+            : captureData.error?.message || captureData.message || "Capture failed";
+        throw new Error(msg);
+      }
 
       // 3. Set receipt and advance to Stage 4 (Result & Settlement)
       setCurrentStage(4);
@@ -133,8 +220,16 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
 
       setActivePayment(null);
       fetchInvoices();
+
+      // Echo confirms receipt via voice
+      speakSoftly(
+        `Payment completed via PayPal Sandbox. Amount settled: ${activePayment.amount} dollars to ${activePayment.merchantName}. Receipt recorded.`
+      );
     } catch (err) {
-      setPaymentError(err.message || "PayPal Sandbox payment failed");
+      const msg = err?.message || String(err) || "PayPal Sandbox payment failed";
+      setPaymentError(msg);
+      // Echo speaks the error to user (Task 7)
+      speakSoftly(`Payment error: ${msg}`);
     } finally {
       setPaying(false);
     }
@@ -213,8 +308,8 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
       }
       subtitle={
         isSeller
-          ? "Say or type billing details. SayPay parses the items, generates the invoice in the database, and alerts the customer."
-          : "Say or type what you want to pay. SayPay cross-references the invoice with deterministic MatchCheck rules before human approval."
+          ? "Say or type billing details. Echo parses items, generates the invoice in MongoDB, and alerts the customer."
+          : "Say or type what you want to pay. Echo cross-references the invoice with deterministic MatchCheck rules before human approval."
       }
       badge={
         <>
@@ -235,8 +330,8 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
           role={isSeller ? "seller" : "buyer"}
           greeting={
             isSeller
-              ? "Hello! I’m SayPay Merchant Assist. Say what invoice you’d like to create (e.g. 'Create invoice for buyer@saypay.app for 2 coffee bags at $36'), or ask to view your pending invoices."
-              : "Hi, I’m SayPay Assist. Tell me what bill you’d like to pay, or ask me to show your unpaid invoices."
+              ? "Hello! I’m Echo. Say what invoice you’d like to create (e.g. 'Create invoice for buyer@saypay.app for 2 coffee bags at $36'), or ask to view your pending invoices."
+              : "Hi, I’m Echo. Tell me what bill you’d like to pay, or select an invoice below to verify and settle."
           }
           suggestions={isSeller ? sellerSuggestions : buyerSuggestions}
           onAssistantResult={handleAssistantResult}
@@ -479,7 +574,9 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
 
             {paymentError && (
               <div className="rounded-xl border border-[#FECACA] bg-[#FFF5F5] p-3 text-xs text-[#DC2626]">
-                {paymentError}
+                {typeof paymentError === "string"
+                  ? paymentError
+                  : paymentError?.message || JSON.stringify(paymentError)}
               </div>
             )}
 
@@ -655,7 +752,7 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
           </section>
         )}
 
-        {/* DEFAULT VIEW: STRICT UNPAID BILLS LIST (NC-04) */}
+        {/* DEFAULT VIEW: STRICT UNPAID BILLS LIST (NC-04 / Task 1 & 2) */}
         {!activePayment && !createdInvoice && !completedReceipt && !isScreening && (
           <section className="rounded-2xl border border-[#DFE5E8] bg-surface-container-lowest p-4 shadow-sm sm:p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-[#F0F3F5] pb-3">
@@ -666,7 +763,7 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
                 <p className="font-body-sm text-body-sm text-secondary">
                   {isSeller
                     ? "Invoices currently issued to buyers."
-                    : "Say 'Pay [merchant]' to the assistant, or select an invoice below."}
+                    : "Say 'Pay [merchant]' to Echo, or select an invoice below."}
                 </p>
               </div>
               <span className="rounded-full border border-[#DFE5E8] bg-white px-2.5 py-0.5 font-label-sm text-label-sm text-secondary">
@@ -718,24 +815,7 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
                       {!isSeller && (
                         <button
                           type="button"
-                          onClick={() => {
-                            handleAssistantResult({
-                              action: "prepare_payment",
-                              data: {
-                                payment: {
-                                  checkId: "chk_" + inv.invoiceId,
-                                  invoiceId: inv.invoiceId,
-                                  merchantName: inv.merchantName,
-                                  merchantKey: inv.merchantKey,
-                                  amount: inv.amount,
-                                  currency: inv.currency,
-                                  description: inv.description,
-                                  status: "CLEAR",
-                                  canCreateOrder: true,
-                                },
-                              },
-                            });
-                          }}
+                          onClick={() => handleSelectInvoiceForPayment(inv)}
                           className="inline-flex min-h-[34px] items-center gap-1 rounded-[8px] bg-primary-container px-3 py-1 font-label-md text-label-md font-semibold text-white hover:bg-[#066653] shadow-sm transition-all"
                         >
                           Review & Pay

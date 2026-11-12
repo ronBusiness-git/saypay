@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { speakSoftly, stopSpeaking } from "../../lib/voice.js";
 
-function VoiceStatusPill({ listening, speaking, voiceEnabled, isThinking }) {
-  if (!voiceEnabled) {
+function VoiceStatusPill({ listening, speaking, voiceEnabled, isThinking, isMuted }) {
+  if (!voiceEnabled || isMuted) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-[#E5E7EB] bg-[#F3F4F6] px-2.5 py-1 font-label-sm text-label-sm text-secondary">
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-[#FECACA] bg-[#FFF5F5] px-2.5 py-1 font-label-sm text-label-sm font-semibold text-[#DC2626]">
         <span className="material-symbols-outlined text-[13px]">mic_off</span>
-        Mic off
+        {isMuted ? "Muted" : "Mic off"}
       </span>
     );
   }
@@ -45,16 +45,9 @@ function VoiceStatusPill({ listening, speaking, voiceEnabled, isThinking }) {
   );
 }
 
-const SUPPORTED_LANGUAGES = [
-  { code: "en-US", label: "EN" },
-  { code: "es-ES", label: "ES" },
-  { code: "fr-FR", label: "FR" },
-  { code: "de-DE", label: "DE" },
-];
-
 export default function VoiceAssistPanel({
   stage = 1,
-  greeting = "Hi, I’m SayPay Assist. Tell me what you want to pay and I’ll verify it with safety rules before anything moves.",
+  greeting = "Hi, I’m Echo. Tell me what bill you’d like to pay, or select an invoice to verify and settle.",
   suggestions = [],
   onTranscript,
   onSuggestion,
@@ -68,18 +61,23 @@ export default function VoiceAssistPanel({
   const [listening, setListening] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [input, setInput] = useState("");
   const [liveTranscript, setLiveTranscript] = useState("");
-  const [selectedLang, setSelectedLang] = useState("en-US");
   const [messages, setMessages] = useState([
     { role: "assistant", text: greeting },
   ]);
 
   const continuousListeningRef = useRef(false);
+  const isRunningRef = useRef(false);
+  const isSpeakingRef = useRef(false);
+  const isThinkingRef = useRef(false);
+  const isMutedRef = useRef(false);
+  const recognitionRef = useRef(null);
+
   const pauseTimerRef = useRef(null);
   const inputRef = useRef(null);
   const scrollRef = useRef(null);
-  const recognitionRef = useRef(null);
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
 
@@ -88,32 +86,145 @@ export default function VoiceAssistPanel({
     if (node) node.scrollTop = node.scrollHeight;
   }, [messages, listening, speaking, isThinking]);
 
+  // Safe Start helper to prevent InvalidStateError on SpeechRecognition
+  const safeStart = useCallback(() => {
+    if (typeof window === "undefined") return;
+    if (isMutedRef.current || !voiceEnabled) return;
+    if (isSpeakingRef.current || isThinkingRef.current) return;
+    if (isRunningRef.current) return;
+
+    const recognizer = recognitionRef.current;
+    if (!recognizer) return;
+
+    try {
+      recognizer.start();
+    } catch (err) {
+      // Ignore if browser reports recognition already started
+      if (err.name !== "InvalidStateError") {
+        console.warn("Speech recognition start notice:", err?.message || err);
+      }
+    }
+  }, [voiceEnabled]);
+
+  // Safe Stop helper
+  const safeStop = useCallback(() => {
+    const recognizer = recognitionRef.current;
+    if (!recognizer) return;
+    try {
+      recognizer.stop();
+    } catch {}
+  }, []);
+
+  // Initialize SpeechRecognition once
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onstart = () => {
+      isRunningRef.current = true;
+      setListening(true);
+    };
+
+    recognition.onresult = (event) => {
+      let finalTranscript = "";
+      let interimTranscript = "";
+
+      for (let i = 0; i < event.results.length; ++i) {
+        const item = event.results[i];
+        if (item.isFinal) {
+          finalTranscript += item[0].transcript + " ";
+        } else {
+          interimTranscript += item[0].transcript;
+        }
+      }
+
+      const combined = (finalTranscript + interimTranscript).trim();
+      setLiveTranscript(combined);
+
+      // Control words: pause listening if user says "wait", "stop", "hold on", "pause"
+      const lower = combined.toLowerCase();
+      if (
+        lower.endsWith("wait") ||
+        lower.endsWith("stop") ||
+        lower.endsWith("hold on") ||
+        lower.endsWith("pause")
+      ) {
+        if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
+        return;
+      }
+
+      // Reset silence debounce timer while user continues talking
+      if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
+
+      // Auto-execute after 1.25s of silence (Task 6)
+      if (combined.length > 2) {
+        pauseTimerRef.current = setTimeout(() => {
+          setLiveTranscript("");
+          safeStop();
+          handleUserText(combined, true);
+        }, 1250);
+      }
+    };
+
+    recognition.onerror = (event) => {
+      const errType = event?.error;
+      // Benign errors: do not cancel continuous listening session
+      if (errType === "no-speech" || errType === "aborted") {
+        return;
+      }
+      console.warn("Speech recognition notice:", errType);
+    };
+
+    recognition.onend = () => {
+      isRunningRef.current = false;
+      // Automatically resume if continuous listening is on and not muted/speaking
+      if (
+        continuousListeningRef.current &&
+        !isMutedRef.current &&
+        !isSpeakingRef.current &&
+        !isThinkingRef.current
+      ) {
+        setTimeout(safeStart, 250);
+      } else {
+        setListening(false);
+      }
+    };
+
+    recognitionRef.current = recognition;
+
     return () => {
       continuousListeningRef.current = false;
       if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
-      if (recognitionRef.current) {
-        try { recognitionRef.current.abort(); } catch {}
-      }
+      try {
+        recognition.abort();
+      } catch {}
       stopSpeaking();
     };
-  }, []);
+  }, [safeStart, safeStop]);
 
+  // Echo speaks softly with natural voice
   const speak = (text) => {
-    if (!voiceEnabled) return;
+    if (!voiceEnabled || isMutedRef.current) return;
+
+    // Pause recognition while Echo speaks to prevent Echo talking to itself
+    isSpeakingRef.current = true;
     setSpeaking(true);
+    safeStop();
+
     speakSoftly(text, {
-      lang: selectedLang,
       onEnd: () => {
+        isSpeakingRef.current = false;
         setSpeaking(false);
-        // Continuous Voice AI (ChatGPT Astra Style): automatically resume listening if still active
-        if (continuousListeningRef.current && voiceEnabled) {
-          setTimeout(() => {
-            if (continuousListeningRef.current) {
-              setListening(true);
-              startSpeechRecognition();
-            }
-          }, 350);
+        // Hands-Free Continuous Mode: auto-resume listening when Echo finishes speaking
+        if (continuousListeningRef.current && !isMutedRef.current) {
+          setTimeout(safeStart, 300);
         }
       },
     });
@@ -125,8 +236,8 @@ export default function VoiceAssistPanel({
   const handleUserText = async (text, useVoice) => {
     const trimmed = text.trim();
     if (!trimmed) {
-      // Graceful fallback for blank or unintelligible audio (NC-11)
-      const fallback = "I'm sorry, I didn't catch that. I'm happy to help you check or pay your invoices. Could you please repeat that?";
+      const fallback =
+        "I'm sorry, I didn't catch that. I'm happy to help you check or pay your invoices. Could you please repeat that?";
       setMessages((current) => [...current, { role: "assistant", text: fallback }]);
       if (useVoice) speak(fallback);
       return;
@@ -135,24 +246,25 @@ export default function VoiceAssistPanel({
     // Check control words like "stop", "wait", "hold on", "pause"
     if (/^(wait|stop|hold on|pause)$/i.test(trimmed)) {
       continuousListeningRef.current = false;
+      safeStop();
       setListening(false);
-      if (recognitionRef.current) {
-        try { recognitionRef.current.stop(); } catch {}
-      }
       const pauseMsg = "Paused. I'm waiting for your instruction whenever you're ready.";
       setMessages((current) => [...current, { role: "assistant", text: pauseMsg }]);
       if (useVoice) speak(pauseMsg);
       return;
     }
 
-    // Check goodbye/closing words like "no", "that's all", "bye", "cancel"
-    if (/^(no|no thanks|that's all|nothing|bye|cancel|all good)$/i.test(trimmed)) {
+    // Check closing words like "no", "that's all", "bye", "cancel", "ok thanks bye"
+    if (
+      /^(no|no thanks|that's all|nothing|bye|cancel|all good|ok thanks bye|thanks bye)$/i.test(
+        trimmed
+      )
+    ) {
       continuousListeningRef.current = false;
+      safeStop();
       setListening(false);
-      if (recognitionRef.current) {
-        try { recognitionRef.current.stop(); } catch {}
-      }
-      const byeMsg = "Glad I could help! Have a great day. Feel free to tap the microphone anytime you need assistance.";
+      const byeMsg =
+        "Glad I could help! Have a great day. Feel free to tap the microphone whenever you need assistance.";
       setMessages((current) => [...current, { role: "assistant", text: byeMsg }]);
       if (useVoice) speak(byeMsg);
       return;
@@ -166,6 +278,7 @@ export default function VoiceAssistPanel({
       { role: "user", text: trimmed },
     ];
     setMessages(nextMessages);
+    isThinkingRef.current = true;
     setIsThinking(true);
 
     try {
@@ -174,16 +287,16 @@ export default function VoiceAssistPanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: nextMessages.map((m) => ({ role: m.role, content: m.text })),
-          lang: selectedLang,
         }),
       });
 
       const data = await res.json();
+      isThinkingRef.current = false;
       setIsThinking(false);
 
       const reply = data.reply || "I've checked that for you.";
-      
-      // Synchronous Voice & Text Rendering (NC-06)
+
+      // Synchronous Voice & Text Rendering
       setMessages((current) => [
         ...current,
         { role: "assistant", text: reply },
@@ -193,10 +306,10 @@ export default function VoiceAssistPanel({
         speak(reply);
       }
 
-      // Propagate action and data to parent page (e.g. prepare_payment, invoice_created, show_invoices)
       onAssistantResult?.(data);
     } catch (err) {
-      console.warn("Assistant call error:", err);
+      console.warn("Echo assistant call error:", err);
+      isThinkingRef.current = false;
       setIsThinking(false);
       const fallback = "I encountered a brief connection error. Please try again.";
       setMessages((current) => [
@@ -207,97 +320,7 @@ export default function VoiceAssistPanel({
     }
   };
 
-  /**
-   * Speech Recognition with silence detection auto-execute and control words
-   */
-  const startSpeechRecognition = () => {
-    if (typeof window === "undefined") return false;
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return false;
-
-    try {
-      // Abort any prior instance
-      if (recognitionRef.current) {
-        try { recognitionRef.current.abort(); } catch {}
-      }
-
-      const recognition = new SpeechRecognition();
-      recognition.lang = selectedLang;
-      recognition.continuous = true;
-      recognition.interimResults = true;
-
-      recognition.onresult = (event) => {
-        let finalTranscript = "";
-        let interimTranscript = "";
-
-        for (let i = 0; i < event.results.length; ++i) {
-          const item = event.results[i];
-          if (item.isFinal) {
-            finalTranscript += item[0].transcript + " ";
-          } else {
-            interimTranscript += item[0].transcript;
-          }
-        }
-
-        const combined = (finalTranscript + interimTranscript).trim();
-        setLiveTranscript(combined);
-
-        // Control word check: if user says "stop", "wait", "hold on", "pause"
-        const lower = combined.toLowerCase();
-        if (
-          lower.endsWith("wait") ||
-          lower.endsWith("stop") ||
-          lower.endsWith("hold on") ||
-          lower.endsWith("pause")
-        ) {
-          if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
-          return;
-        }
-
-        // Reset silence debounce timer while user continues talking
-        if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
-
-        // Auto-execute after 1.25s of silence when the user finishes speaking
-        if (combined.length > 2) {
-          pauseTimerRef.current = setTimeout(() => {
-            setListening(false);
-            setLiveTranscript("");
-            try { recognition.stop(); } catch {}
-            handleUserText(combined, true);
-          }, 1250);
-        }
-      };
-
-      recognition.onerror = (err) => {
-        console.warn("Speech recognition error:", err);
-        // Do not abort continuous session on non-fatal errors like no-speech
-        if (err.error === "no-speech") {
-          // If silence, remain active in continuous listening mode
-          return;
-        }
-        setListening(false);
-      };
-
-      recognition.onend = () => {
-        // If continuous mode is on and not speaking or thinking, auto-resume
-        if (continuousListeningRef.current && !speaking && !isThinking) {
-          try {
-            recognition.start();
-          } catch {}
-        } else {
-          setListening(false);
-        }
-      };
-
-      recognition.start();
-      recognitionRef.current = recognition;
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
+  // Toggle main microphone
   const handleOrbClick = () => {
     if (!voiceEnabled) {
       setMode("manual");
@@ -306,12 +329,10 @@ export default function VoiceAssistPanel({
     }
 
     if (listening) {
-      // User tapped to finish / stop listening
+      // User tapped to finish recording
       continuousListeningRef.current = false;
       if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
-      if (recognitionRef.current) {
-        try { recognitionRef.current.stop(); } catch {}
-      }
+      safeStop();
       setListening(false);
       if (liveTranscript.trim()) {
         const text = liveTranscript;
@@ -324,15 +345,26 @@ export default function VoiceAssistPanel({
     stopSpeaking();
     setSpeaking(false);
     setMode("voice");
+    isMutedRef.current = false;
+    setIsMuted(false);
     continuousListeningRef.current = true;
-    setListening(true);
     setLiveTranscript("");
+    safeStart();
+  };
 
-    const started = startSpeechRecognition();
-    if (!started) {
+  // Toggle Mute button (Task 5)
+  const handleToggleMute = () => {
+    if (isMuted) {
+      isMutedRef.current = false;
+      setIsMuted(false);
+      continuousListeningRef.current = true;
+      safeStart();
+    } else {
+      isMutedRef.current = true;
+      setIsMuted(true);
       continuousListeningRef.current = false;
+      safeStop();
       setListening(false);
-      alert("Speech recognition is not available on this browser. Please use manual entry.");
     }
   };
 
@@ -353,6 +385,7 @@ export default function VoiceAssistPanel({
   const focusManual = () => {
     setMode("manual");
     continuousListeningRef.current = false;
+    safeStop();
     setListening(false);
     stopSpeaking();
     setTimeout(() => inputRef.current?.focus(), 30);
@@ -361,7 +394,7 @@ export default function VoiceAssistPanel({
   return (
     <section
       className={`overflow-hidden rounded-2xl transition-all duration-300 ${
-        listening
+        listening && !isMuted
           ? "bg-[#EAF7F1] ring-2 ring-[#087F68]/40 border border-[#78D8BD] shadow-[0_4px_24px_rgba(8,127,104,0.12)]"
           : "bg-surface-container-lowest border border-[#DFE5E8] shadow-[0_1px_3px_rgba(21,35,45,0.04),0_4px_12px_rgba(21,35,45,0.03)]"
       }`}
@@ -377,44 +410,38 @@ export default function VoiceAssistPanel({
           </div>
           <div className="min-w-0">
             <p className="truncate font-label-lg text-label-lg font-bold text-on-surface">
-              SayPay Assist
+              Echo
             </p>
             <p className="truncate font-body-sm text-body-sm text-secondary">
-              {role === "seller" ? "Merchant invoice voice companion" : "Voice-first payment companion"}
+              {role === "seller" ? "Merchant invoice voice companion" : "Autonomous voice payment companion"}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Multi-language Selector (NC-12) */}
-          <div className="flex rounded-lg border border-[#DFE5E8] bg-white p-0.5 text-[11px] font-semibold text-secondary">
-            {SUPPORTED_LANGUAGES.map((lang) => (
-              <button
-                key={lang.code}
-                type="button"
-                onClick={() => {
-                  setSelectedLang(lang.code);
-                  if (recognitionRef.current) {
-                    recognitionRef.current.lang = lang.code;
-                  }
-                }}
-                className={`rounded px-1.5 py-0.5 transition-colors ${
-                  selectedLang === lang.code
-                    ? "bg-[#087F68] text-white"
-                    : "text-secondary hover:text-[#15232D]"
-                }`}
-                title={`Switch to ${lang.label}`}
-              >
-                {lang.label}
-              </button>
-            ))}
-          </div>
+          {/* Mute button (Task 5) */}
+          <button
+            type="button"
+            onClick={handleToggleMute}
+            aria-label={isMuted ? "Unmute microphone" : "Mute microphone"}
+            className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 font-label-sm text-label-sm font-semibold transition-colors ${
+              isMuted
+                ? "border-[#FECACA] bg-[#FFF5F5] text-[#DC2626] hover:bg-[#FEE2E2]"
+                : "border-[#DFE5E8] bg-white text-secondary hover:text-on-surface hover:bg-[#F7F8FA]"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[15px]">
+              {isMuted ? "mic_off" : "mic"}
+            </span>
+            <span>{isMuted ? "Unmute" : "Mute"}</span>
+          </button>
 
           <VoiceStatusPill
             listening={listening}
             speaking={speaking}
             isThinking={isThinking}
             voiceEnabled={voiceEnabled}
+            isMuted={isMuted}
           />
         </div>
       </div>
@@ -432,21 +459,23 @@ export default function VoiceAssistPanel({
             voiceEnabled
               ? listening
                 ? "Stop listening"
-                : "Speak to SayPay Assist"
+                : "Speak to Echo"
               : "Voice input is disabled"
           }
           aria-expanded={mode === "voice"}
           className={`group relative mx-auto flex items-center justify-center rounded-full transition-all duration-300 ${
             mode === "voice" ? "h-24 w-24" : "h-12 w-12"
           } ${
-            listening
+            listening && !isMuted
               ? "bg-[#087F68] text-white shadow-xl shadow-[#087F68]/30 scale-105"
+              : isMuted
+              ? "bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FECACA]"
               : voiceEnabled
               ? "bg-[#EAF7F1] text-primary-container hover:bg-[#087F68] hover:text-white"
               : "bg-[#F3F4F6] text-secondary/60 cursor-not-allowed"
           }`}
         >
-          {listening && (
+          {listening && !isMuted && (
             <>
               <span className="voice-ring-1 absolute inset-0 rounded-full bg-[#087F68]/30 animate-ping" />
               <span className="voice-ring-2 absolute inset-0 rounded-full bg-[#78D8BD]/25" />
@@ -458,7 +487,7 @@ export default function VoiceAssistPanel({
             }`}
             style={{ fontVariationSettings: "'FILL' 1" }}
           >
-            {listening ? "mic" : speaking ? "volume_up" : "mic"}
+            {isMuted ? "mic_off" : listening ? "mic" : speaking ? "volume_up" : "mic"}
           </span>
         </button>
 
@@ -472,16 +501,18 @@ export default function VoiceAssistPanel({
                 <span
                   key={index}
                   className={`w-1 rounded-full ${
-                    listening ? `wave-bar-${bar} bg-[#087F68]` : "h-1.5 bg-[#CDD9D5]"
+                    listening && !isMuted ? `wave-bar-${bar} bg-[#087F68]` : "h-1.5 bg-[#CDD9D5]"
                   }`}
                 />
               ))}
             </div>
             <p className="font-label-lg text-label-lg font-semibold text-on-surface">
-              {listening
-                ? "Continuous listening… speak naturally"
+              {isMuted
+                ? "Microphone is muted"
+                : listening
+                ? "Listening hands-free… speak naturally"
                 : speaking
-                ? "SayPay is speaking…"
+                ? "Echo is speaking…"
                 : isThinking
                 ? "Thinking & evaluating…"
                 : voiceEnabled
@@ -489,13 +520,13 @@ export default function VoiceAssistPanel({
                 : "Voice is paused"}
             </p>
             <p className="mx-auto mt-1 max-w-[32ch] font-body-sm text-body-sm text-secondary">
-              {listening
-                ? liveTranscript || "Auto-executes when you pause. Say 'wait' to pause, or 'no' when done."
+              {listening && !isMuted
+                ? liveTranscript || "Auto-executes when you pause. Say 'wait' to pause, or 'thanks bye' when done."
                 : role === "seller"
                 ? "Try: “Create invoice for buyer@saypay.app for 3 items $45”"
                 : "Try: “Pay GreenLeaf coffee invoice” or “Show unpaid bills”"}
             </p>
-            {listening && (
+            {listening && !isMuted && (
               <button
                 type="button"
                 onClick={handleOrbClick}
@@ -553,7 +584,7 @@ export default function VoiceAssistPanel({
                     <span className="material-symbols-outlined text-[12px]">
                       auto_awesome
                     </span>
-                    SayPay Assist
+                    Echo
                   </span>
                 )}
                 {message.text}
