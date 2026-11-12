@@ -136,30 +136,6 @@ export default function FlowStepper({
           })}
         </ol>
       </div>
-
-      {/* Audit rail */}
-      <div className="mt-4 flex items-center justify-between gap-2 border-t border-[#DFE5E8] pt-3">
-        <div className="flex items-center gap-1.5 text-secondary">
-          <span className="material-symbols-outlined text-[16px] text-outline">
-            lock_clock
-          </span>
-          <span className="font-body-sm text-body-sm">
-            {auditCount > 0
-              ? `${auditCount} event${auditCount === 1 ? "" : "s"} recorded for this attempt`
-              : "Audit log starts when you submit"}
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={onOpenAuditLog}
-          className="inline-flex items-center gap-1 font-label-sm text-label-sm font-semibold text-primary hover:text-primary-container transition-colors"
-        >
-          View log
-          <span className="material-symbols-outlined text-[14px]">
-            arrow_forward
-          </span>
-        </button>
-      </div>
     </section>
   );
 }

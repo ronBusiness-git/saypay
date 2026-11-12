@@ -312,13 +312,10 @@ export default function HistoryPage() {
         )}
 
         {/* Summary Footer */}
-        <div className="px-5 py-4 bg-surface-container-lowest border-t border-outline-variant flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="px-5 py-4 bg-surface-container-lowest border-t border-outline-variant flex items-center justify-between gap-4">
           <div className="font-body-sm text-body-sm text-secondary">
             Showing <span className="font-semibold text-on-surface">{filteredTransactions.length}</span> of{" "}
             <span className="font-semibold text-on-surface">{realTransactions.length}</span> database records
-          </div>
-          <div className="font-code-sm text-code-sm text-secondary">
-            Database: MongoDB Atlas · Collection: transactions
           </div>
         </div>
       </div>
