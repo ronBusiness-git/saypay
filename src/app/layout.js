@@ -23,7 +23,10 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className="antialiased selection:bg-surface-container selection:text-primary">
+      <body
+        className="antialiased selection:bg-surface-container selection:text-primary"
+        suppressHydrationWarning
+      >
         <Suspense fallback={<div className="min-h-screen bg-[#F8FAFC]" />}>
           <AppShell>{children}</AppShell>
         </Suspense>

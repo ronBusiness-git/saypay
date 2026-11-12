@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import FlowPageLayout from "../../components/flow/FlowPageLayout.js";
@@ -23,10 +23,15 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
   const [paying, setPaying] = useState(false);
   const [paymentError, setPaymentError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const screeningTimerRef = useRef(null);
 
   useEffect(() => {
     fetchInvoices();
   }, [session?.role]);
+
+  useEffect(() => () => {
+    if (screeningTimerRef.current) clearTimeout(screeningTimerRef.current);
+  }, []);
 
   useEffect(() => {
     // Read each navigation handoff when returning to this route. Next.js can
@@ -84,6 +89,10 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
   const handleAssistantResult = (result) => {
     if (!result) return;
     setPaymentError(null);
+    if (screeningTimerRef.current) {
+      clearTimeout(screeningTimerRef.current);
+      screeningTimerRef.current = null;
+    }
 
     if (result.action === "amount_mismatch") {
       // Keep the warning in chat; a wrong amount must not open the payment review.
@@ -104,7 +113,8 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
       setCurrentStage(2);
       setIsScreening(true);
 
-      setTimeout(() => {
+      screeningTimerRef.current = setTimeout(() => {
+        screeningTimerRef.current = null;
         setIsScreening(false);
         setActivePayment(result.data.payment);
         setCurrentStage(3);
@@ -157,7 +167,8 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
         throw new Error(msg);
       }
 
-      setTimeout(() => {
+      screeningTimerRef.current = setTimeout(() => {
+        screeningTimerRef.current = null;
         setIsScreening(false);
         let paymentData = null;
         if (data.action === "prepare_payment" && data.data?.payment) {

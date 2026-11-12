@@ -248,6 +248,10 @@ export default function VoiceAssistPanel({
   // Echo speaks softly with natural voice
   const speak = (text) => {
     if (!voiceEnabled || areRepliesMutedRef.current) return;
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      setVoiceError("Spoken replies are unavailable in this browser. You can still read the reply in chat.");
+      return;
+    }
 
     // Pause recognition while Echo speaks to prevent Echo talking to itself
     isSpeakingRef.current = true;
@@ -460,6 +464,11 @@ export default function VoiceAssistPanel({
       stopSpeaking();
       isSpeakingRef.current = false;
       setSpeaking(false);
+      // Speech cancellation may not fire an onend event in every browser.
+      // Resume continuous listening explicitly if Echo had paused it to speak.
+      if (continuousListeningRef.current && !isMutedRef.current && stage !== 3) {
+        setTimeout(safeStart, 300);
+      }
     }
   };
 

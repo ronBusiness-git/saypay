@@ -43,7 +43,7 @@ function extractInvoiceId(text) {
   return match ? `${match[1]}-${match[2]}`.toUpperCase() : null;
 }
 
-function extractExplicitAmount(text) {
+function extractExplicitAmount(text, defaultCurrency = null, allowBareAmount = false) {
   const amount = String.raw`(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)`;
   const patterns = [
     { regex: new RegExp(String.raw`\$\s*${amount}`, "i"), currency: "USD" },
@@ -105,7 +105,44 @@ function extractExplicitAmount(text) {
     };
   }
 
-  return null;
+  if (!defaultCurrency) return null;
+
+  // Voice transcription often drops currency words. Use the invoice currency
+  // only for an explicitly stated amount, after removing the invoice ID itself.
+  const invoiceId = extractInvoiceId(text);
+  let amountText = String(text || "");
+  if (invoiceId) {
+    const [prefix, digits] = invoiceId.split("-");
+    const digitWords = {
+      0: "zero", 1: "one", 2: "two", 3: "three", 4: "four",
+      5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine",
+    };
+    const spokenDigits = digits
+      .split("")
+      .map((digit) => digitWords[digit])
+      .join("\\s+");
+    const spacedDigits = digits.split("").join("\\s+");
+    const prefixPattern = prefix.split("").join("\\s*");
+    const idPattern = new RegExp(
+      `\\b${prefixPattern}\\s*(?:-|–|—|hyphen|dash|\\s)\\s*(?:${digits}|${spokenDigits}|${spacedDigits})\\b`,
+      "i",
+    );
+    amountText = amountText.replace(idPattern, " ");
+  }
+
+  const hasAmountCue = /\b(pay|paying|amount|price|cost|worth|for|actual|meant|said)\b/i.test(
+    amountText,
+  );
+  if (!allowBareAmount && !hasAmountCue && !invoiceId) return null;
+
+  const numbers = [...amountText.matchAll(/\b(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)\b/g)];
+  const unmarkedAmount = numbers.at(-1)?.[1];
+  if (!unmarkedAmount) return null;
+
+  return {
+    amount: unmarkedAmount.replaceAll(",", ""),
+    currency: String(defaultCurrency).toUpperCase(),
+  };
 }
 
 /**
@@ -553,7 +590,14 @@ export async function processAssistantRequest({ messages, context = {}, user = n
   const previousInvoiceId = previousInvoiceRequest
     ? extractInvoiceId(previousInvoiceRequest.content)
     : null;
-  const followupAmount = extractExplicitAmount(lastUserMsg);
+  const previousInvoice = previousInvoiceId
+    ? unpaidInvoices.find((invoice) => invoice.invoiceId.toUpperCase() === previousInvoiceId)
+    : null;
+  const followupAmount = extractExplicitAmount(
+    lastUserMsg,
+    previousInvoice?.currency,
+    Boolean(previousInvoiceId),
+  );
   if (previousInvoiceId && followupAmount) {
     intentDecision = {
       reply: `I'll check the amount you stated against invoice ${previousInvoiceId}.`,
@@ -870,7 +914,11 @@ export async function processAssistantRequest({ messages, context = {}, user = n
       };
     }
 
-    const statedPayment = extractExplicitAmount(lastUserMsg);
+    const statedPayment = extractExplicitAmount(
+      lastUserMsg,
+      invoice.currency,
+      Boolean(previousInvoiceId && previousInvoiceId === invoice.invoiceId.toUpperCase()),
+    );
     const intentFields = {
       recipientName: invoice.merchantName,
       merchantKey: invoice.merchantKey,
