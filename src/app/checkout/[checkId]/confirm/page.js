@@ -7,6 +7,7 @@ import FlowPageLayout from "../../../../components/flow/FlowPageLayout.js";
 import VoiceAssistPanel from "../../../../components/flow/VoiceAssistPanel.js";
 import { ExpiryTimer } from "../../../../components/flow/CheckoutSummary.js";
 import { DEMO_PAYMENT } from "../../../../lib/demoFlowData.js";
+import { CheckoutSkeleton } from "../../../../components/ui/LoadingSkeletons.js";
 
 function ConfirmCheckout({ params, onOpenAuditLog }) {
   const router = useRouter();
@@ -295,7 +296,7 @@ function ConfirmCheckout({ params, onOpenAuditLog }) {
 
 export default function ConfirmCheckoutPage(props) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<CheckoutSkeleton />}>
       <ConfirmCheckout {...props} />
     </Suspense>
   );

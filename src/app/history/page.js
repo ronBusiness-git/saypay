@@ -3,17 +3,14 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { GridTableSkeleton } from "../../components/ui/LoadingSkeletons.js";
 
 const SayPayGrid = dynamic(
   () => import("../../components/grid/SayPayGrid.js"),
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-64 items-center justify-center bg-[#F7F8FA] text-center">
-        <span className="font-body-sm text-body-sm text-secondary">
-          Loading transaction history…
-        </span>
-      </div>
+      <GridTableSkeleton rows={8} label="Loading transaction history…" />
     ),
   },
 );

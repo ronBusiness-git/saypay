@@ -10,6 +10,7 @@ import {
   TONE,
   resultStateForId,
 } from "../../../lib/demoFlowData.js";
+import { ResultSkeleton } from "../../../components/ui/LoadingSkeletons.js";
 
 const ASSIST_COPY = {
   completed: {
@@ -511,7 +512,7 @@ function ResultView({ params, onOpenAuditLog }) {
 
 export default function ResultPage(props) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<ResultSkeleton />}>
       <ResultView {...props} />
     </Suspense>
   );
