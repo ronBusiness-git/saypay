@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import EchoAvatar from "../EchoAvatar.js";
 import { TONE } from "../../lib/demoFlowData.js";
 
 const RESULT_STYLES = {
@@ -27,6 +28,32 @@ const CHECK_RESULT_STYLES = {
   WARN: "bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]",
   FAIL: "bg-[#FEE2E2] text-[#DC2626] border-[#FECACA]",
 };
+
+function ReadAloudButton({ text, tone }) {
+  const speak = () => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new window.SpeechSynthesisUtterance(text);
+    utterance.lang = "en-US";
+    utterance.rate = 1;
+    window.speechSynthesis.speak(utterance);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={speak}
+      className={`inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-[10px] border bg-white px-3 py-2 font-label-md text-label-md font-semibold transition-colors hover:bg-white/70 ${tone.text} ${tone.border}`}
+    >
+      <span className={`h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ${tone.border}`}>
+        <EchoAvatar sizes="20px" />
+      </span>
+      Read aloud
+    </button>
+  );
+}
 
 function FieldStatus({ status, label }) {
   const style = RESULT_STYLES[status] || RESULT_STYLES.match;

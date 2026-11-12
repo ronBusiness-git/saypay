@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import FlowPageLayout from "../../../components/flow/FlowPageLayout.js";
 import VoiceAssistPanel from "../../../components/flow/VoiceAssistPanel.js";
+import EchoAvatar from "../../../components/EchoAvatar.js";
 
 const CAPTURED = "Pay one hundred twenty five dollars to Aura Cloud Services.";
 const AI_QUESTION =
@@ -90,6 +91,16 @@ export default function NewCheckClarifyPage({ onOpenAuditLog }) {
                 </p>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={readQuestion}
+              className="inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-[10px] border border-[#FDE68A] bg-white px-3 py-2 font-label-md text-label-md font-semibold text-[#B45309] hover:bg-[#FFFBEB]"
+            >
+              <span className="h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ring-[#FDE68A]">
+                <EchoAvatar sizes="20px" />
+              </span>
+              Read aloud
+            </button>
           </div>
 
           <div className="mt-4 rounded-xl border border-[#FDE68A] bg-white p-3">

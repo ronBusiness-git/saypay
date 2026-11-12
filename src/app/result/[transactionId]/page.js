@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import FlowPageLayout from "../../../components/flow/FlowPageLayout.js";
 import VoiceAssistPanel from "../../../components/flow/VoiceAssistPanel.js";
+import EchoAvatar from "../../../components/EchoAvatar.js";
 import {
   DEMO_PAYMENT,
   RESULT_ROUTES,
@@ -251,6 +252,17 @@ function ResultView({ params, onOpenAuditLog }) {
                 <p className="mt-1.5 font-body-sm text-body-sm text-secondary">{state.subline}</p>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={readAloud}
+              disabled={!voiceEnabled}
+              className={`inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-[10px] border bg-white px-3 py-2 font-label-md text-label-md font-semibold transition-colors hover:bg-white/70 disabled:cursor-not-allowed disabled:opacity-50 ${tone.text} ${tone.border}`}
+            >
+              <span className={`h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ${tone.border}`}>
+                <EchoAvatar sizes="20px" />
+              </span>
+              Read aloud
+            </button>
           </div>
 
           {state.key === "pending" && (

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import FlowPageLayout from "../../../../components/flow/FlowPageLayout.js";
 import VoiceAssistPanel from "../../../../components/flow/VoiceAssistPanel.js";
+import EchoAvatar from "../../../../components/EchoAvatar.js";
 import { ExpiryTimer } from "../../../../components/flow/CheckoutSummary.js";
 import { DEMO_PAYMENT } from "../../../../lib/demoFlowData.js";
 import { CheckoutSkeleton } from "../../../../components/ui/LoadingSkeletons.js";
@@ -246,6 +247,16 @@ function ConfirmCheckout({ params, onOpenAuditLog }) {
                 </p>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={readQuestion}
+              className="inline-flex min-h-[40px] shrink-0 items-center gap-1.5 self-start rounded-[10px] border border-[#BFDBFE] bg-white px-3 py-2 font-label-md text-label-md font-semibold text-[#1D4ED8] hover:bg-[#EFF6FF]"
+            >
+              <span className="h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ring-[#BFDBFE]">
+                <EchoAvatar sizes="20px" />
+              </span>
+              Read aloud
+            </button>
           </div>
         </section>
 
@@ -291,44 +302,47 @@ function ConfirmCheckout({ params, onOpenAuditLog }) {
         ) : (
           <section className="rounded-2xl border border-[#DFE5E8] bg-surface-container-lowest p-4 shadow-sm sm:p-5">
             <div className="mb-4 flex items-center justify-between gap-2">
-              <h2 className="font-headline-sm text-headline-sm font-semibold text-on-surface">
-                Voice confirmation
-              </h2>
-              <span
-                aria-live="polite"
-                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-label-sm text-label-sm font-semibold ${
-                  listening
-                    ? "border-[#A7F3D0] bg-[#EAF7F1] text-[#107E3E]"
-                    : "border-[#DFE5E8] bg-[#F7F8FA] text-secondary"
-                }`}
-              >
+                <h2 className="font-headline-sm text-headline-sm font-semibold text-on-surface">
+                  Voice confirmation
+                </h2>
                 <span
-                  className={`h-2 w-2 rounded-full ${
-                    listening ? "animate-pulse bg-[#107E3E]" : "bg-[#B8C2CC]"
+                  aria-live="polite"
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-label-sm text-label-sm font-semibold ${
+                    listening
+                      ? "border-[#A7F3D0] bg-[#EAF7F1] text-[#107E3E]"
+                      : "border-[#DFE5E8] bg-[#F7F8FA] text-secondary"
                   }`}
-                />
-                {listening ? "Listening for Pay or Cancel…" : "Mic ready"}
-              </span>
-            </div>
-
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#DFE5E8] bg-[#F7F8FA] p-6 text-center">
-              <button
-                type="button"
-                onClick={startListening}
-                disabled={listening || creatingOrder}
-                className={`flex h-16 w-16 items-center justify-center rounded-full text-white shadow-md transition-all ${
-                  listening
-                    ? "animate-pulse bg-[#DC2626] ring-4 ring-[#FEE2E2]"
-                    : "bg-primary-container hover:bg-primary hover:scale-105"
-                }`}
-              >
-                <span className="material-symbols-outlined text-[30px]">
-                  {listening ? "graphic_eq" : "mic"}
+                >
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      listening ? "animate-pulse bg-[#107E3E]" : "bg-[#B8C2CC]"
+                    }`}
+                  />
+                  {listening ? "Listening for Pay or Cancel…" : "Echo ready"}
                 </span>
-              </button>
-              <p className="mt-3 font-label-md text-label-md font-semibold text-on-surface">
-                {listening ? "Listening… say “Pay” or “Cancel”" : "Tap the mic and say “Pay”"}
-              </p>
+              </div>
+
+              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#DFE5E8] bg-[#F7F8FA] p-6 text-center">
+                <button
+                  type="button"
+                  onClick={startListening}
+                  disabled={listening || creatingOrder}
+                  className={`relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full ring-2 transition-all ${
+                    listening
+                      ? "assist-live-avatar bg-[#DC2626] ring-[#FECACA]"
+                      : "assist-breathe bg-white ring-[#DFE5E8] hover:ring-[#78D8BD]"
+                  }`}
+                >
+                  <EchoAvatar sizes="64px" />
+                  <span
+                    className={`absolute bottom-0.5 right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white ${
+                      listening ? "animate-pulse bg-[#DC2626]" : "bg-[#107E3E]"
+                    }`}
+                  />
+                </button>
+                <p className="mt-3 font-label-md text-label-md font-semibold text-on-surface">
+                  {listening ? "Listening… say “Pay” or “Cancel”" : "Tap Echo and say “Pay”"}
+                </p>
               <p className="mt-0.5 font-body-sm text-body-sm text-secondary">
                 SayPay strictly verifies voice confirmation before moving forward.
               </p>
