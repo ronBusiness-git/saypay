@@ -7,6 +7,107 @@ import { runMatchCheck } from "./matchcheck.js";
 
 const GROQ_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
 
+function extractInvoiceId(text) {
+  // Voice recognition may omit the hyphen or transcribe it as "hyphen".
+  const normalizedText = String(text || "").replace(
+    /\b([a-z])\s+([a-z])(?=\s+(?:-|–|—|hyphen|dash|\d|zero|one|two|three|four|five|six|seven|eight|nine))/gi,
+    "$1$2",
+  );
+  const digitWords = {
+    zero: "0", one: "1", two: "2", three: "3", four: "4",
+    five: "5", six: "6", seven: "7", eight: "8", nine: "9",
+  };
+  const spokenDigits = normalizedText.match(
+    /\b([a-z]{2})\s*(?:-|–|—|\bhyphen\b|\bdash\b|\s)\s*((?:(?:zero|one|two|three|four|five|six|seven|eight|nine)\s+){2,4}(?:zero|one|two|three|four|five|six|seven|eight|nine))\b/i,
+  );
+  if (spokenDigits) {
+    const digits = spokenDigits[2]
+      .toLowerCase()
+      .trim()
+      .split(/\s+/)
+      .map((word) => digitWords[word])
+      .join("");
+    return `${spokenDigits[1]}-${digits}`.toUpperCase();
+  }
+
+  const spacedDigits = normalizedText.match(
+    /\b([a-z]{2})\s*(?:-|–|—|\bhyphen\b|\bdash\b|\s)\s*((?:\d\s+){2,4}\d)\b/i,
+  );
+  if (spacedDigits) {
+    return `${spacedDigits[1]}-${spacedDigits[2].replaceAll(/\s/g, "")}`.toUpperCase();
+  }
+
+  const match = normalizedText.match(
+    /\b([a-z]{2})\s*(?:-|–|—|\bhyphen\b|\bdash\b|\s)\s*(\d{3,5})\b/i,
+  );
+  return match ? `${match[1]}-${match[2]}`.toUpperCase() : null;
+}
+
+function extractExplicitAmount(text) {
+  const amount = String.raw`(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)`;
+  const patterns = [
+    { regex: new RegExp(String.raw`\$\s*${amount}`, "i"), currency: "USD" },
+    { regex: new RegExp(String.raw`€\s*${amount}`, "i"), currency: "EUR" },
+    { regex: new RegExp(String.raw`£\s*${amount}`, "i"), currency: "GBP" },
+    { regex: new RegExp(String.raw`₹\s*${amount}`, "i"), currency: "INR" },
+    {
+      regex: new RegExp(String.raw`\b(?:USD|US dollars?|dollars?)\s*${amount}`, "i"),
+      currency: "USD",
+    },
+    {
+      regex: new RegExp(String.raw`${amount}\s*(?:USD|US dollars?|dollars?)\b`, "i"),
+      currency: "USD",
+    },
+    {
+      regex: new RegExp(String.raw`\b(?:EUR|euros?)\s*${amount}`, "i"),
+      currency: "EUR",
+    },
+    {
+      regex: new RegExp(String.raw`${amount}\s*(?:EUR|euros?)\b`, "i"),
+      currency: "EUR",
+    },
+    {
+      regex: new RegExp(String.raw`\b(?:GBP|pounds?)\s*${amount}`, "i"),
+      currency: "GBP",
+    },
+    {
+      regex: new RegExp(String.raw`${amount}\s*(?:GBP|pounds?)\b`, "i"),
+      currency: "GBP",
+    },
+    {
+      regex: new RegExp(String.raw`\b(?:INR|rupees?)\s*${amount}`, "i"),
+      currency: "INR",
+    },
+    {
+      regex: new RegExp(String.raw`${amount}\s*(?:INR|rupees?)\b`, "i"),
+      currency: "INR",
+    },
+    {
+      regex: new RegExp(String.raw`\b(USD|EUR|GBP|INR)\s*${amount}`, "i"),
+      currencyFromMatch: true,
+      amountIndex: 2,
+    },
+    {
+      regex: new RegExp(String.raw`${amount}\s*(USD|EUR|GBP|INR)\b`, "i"),
+      currencyFromMatch: true,
+      amountIndex: 1,
+    },
+  ];
+
+  for (const pattern of patterns) {
+    const match = String(text || "").match(pattern.regex);
+    if (!match) continue;
+    return {
+      amount: match[pattern.amountIndex || 1].replaceAll(",", ""),
+      currency: pattern.currencyFromMatch
+        ? match[pattern.amountIndex === 2 ? 1 : 2].toUpperCase()
+        : pattern.currency,
+    };
+  }
+
+  return null;
+}
+
 /**
  * Call Groq chat completions to extract conversational intent and generate warm natural reply.
  */
@@ -40,7 +141,7 @@ async function callGroqAssistant({ messages, unpaidInvoices, paidInvoices = [], 
     systemPrompt = `You are Echo, an intelligent merchant voice assistant for invoicing and settlements.
 Current User: ${user?.name || "GreenLeaf Demo Store"} (${user?.email || "seller@saypay.app"}), Role: MERCHANT.
 Merchant Key: ${user?.merchantKey || "greenleaf-demo-store"}.
-Selected Language: ${lang}. If user speaks in another language, respond in that language.
+Selected Language: ${lang}. Respond in the selected language. If the selected language is Tamil (ta-IN), reply in Tamil.
 
 Your job is to understand when the merchant wants to create or issue an invoice, check billing status, or search invoices.
 Be concise and warm (1-2 sentences max).
@@ -73,9 +174,9 @@ Rules for Merchant:
   } else {
     systemPrompt = `You are Echo, an intelligent conversational payment assistant for PayPal.
 Current User: ${user?.name || "John Doe"} (${user?.email || "buyer@saypay.app"}), Role: BUYER.
-Selected Language: ${lang}. If user speaks in Spanish, French, German, or English, answer in that same language.
+Selected Language: English (India). Always respond in clear, concise English.
 
-Your job is to understand what the user wants, generate a SHORT, warm, speakable reply (1-2 sentences max), and decide on the action.
+Your job is to understand what the user wants, generate a SHORT, warm, speakable English reply (1-2 sentences max), and decide on the action. Always respond in English.
 You can answer questions about invoices, check status (PAID vs UNPAID), filter by date or merchant, and prepare payments.
 Speak naturally like a helpful payment assistant. Do NOT use markdown asterisks or robotic phrases.
 
@@ -102,8 +203,8 @@ Action Rules:
 5. "query_pending_total": User asks "what's my total pending amount", "how much do I owe", "total balance".
 6. "query_due_this_week": User asks "show bills due this week" or "what is due soon".
 7. "query_paid_today": User asks "show invoices paid today" or "what did I pay today".
-8. "prepare_payment": User wants to pay a specific bill, merchant, or invoice (e.g. "pay GreenLeaf", "pay invoice GL-1042", "pay $12.50 to GreenLeaf"). Set "targetInvoiceId" to the matching invoiceId.
-9. "prepare_bulk_payment": User says "pay all unpaid invoices", "pay all bills", "pay all". Set "targetInvoiceIds" to ["all"].
+8. "prepare_payment": User wants to pay, open, show, view, or review a specific unpaid invoice (e.g. "pay invoice GL-1042", "open GL-1042", "review invoice GL-1042", "pay $12.50 to GreenLeaf"). Tamil/Tanglish phrases like "invoice pay pannanum", "bill settle pannunga", and "kaasu seluthanum" also mean prepare or open its safety review. Set "targetInvoiceId" to the matching invoiceId. Opening a review never authorizes or captures a payment.
+9. "prepare_bulk_payment": User says "pay all unpaid invoices", "pay all bills", "pay all", or the equivalent Tamil/Tanglish request. Set "targetInvoiceIds" to ["all"].
 10. "show_history": User asks about recent transactions or payment receipts.`;
   }
 
@@ -141,8 +242,9 @@ Action Rules:
 /**
  * Heuristic fallback parser if Groq API is unavailable or times out.
  */
-function heuristicAssistant({ lastMessageText, unpaidInvoices, paidInvoices = [], allInvoices = [], isSeller }) {
+function heuristicAssistant({ lastMessageText, unpaidInvoices, paidInvoices = [], allInvoices = [], isSeller, lang = "en-IN" }) {
   const text = (lastMessageText || "").toLowerCase().trim();
+  const tamilSelected = String(lang).toLowerCase().startsWith("ta");
 
   // Merchant flow
   if (isSeller) {
@@ -189,10 +291,42 @@ function heuristicAssistant({ lastMessageText, unpaidInvoices, paidInvoices = []
     };
   }
 
+  const invoiceId = extractInvoiceId(text);
+  const explicitInvoiceOpen =
+    /\b(open|show|view|review|inspect)\b|திற|பார்க்க/i.test(text);
+  const paymentIntent =
+    /\b(pay|checkout|settle|send)\b|payment|panna|pannanum|pannu|pananum|panunga|panren|seluth|செலுத்த|கட்டணம்|பணம்|கட்டு/i.test(text);
+
+  // Open the requested unpaid invoice in the safety-review stage. This remains
+  // a review only; the user must still press the PayPal button to authorize.
+  if (invoiceId && (explicitInvoiceOpen || paymentIntent)) {
+    const invoice = unpaidInvoices.find(
+      (item) => item.invoiceId.toUpperCase() === invoiceId,
+    );
+    if (invoice) {
+      return {
+        reply: explicitInvoiceOpen && !paymentIntent
+          ? `I've opened invoice ${invoice.invoiceId} for review. It requests ${invoice.currency} ${invoice.amount}. No payment has been started.`
+          : `I've opened invoice ${invoice.invoiceId} for ${invoice.merchantName}. I'll compare the amount you stated with the invoice before you can continue.`,
+        action: "prepare_payment",
+        targetInvoiceId: invoice.invoiceId,
+      };
+    }
+    const existingInvoice = allInvoices.find(
+      (item) => item.invoiceId.toUpperCase() === invoiceId,
+    );
+    return {
+      reply: existingInvoice
+        ? `Invoice ${existingInvoice.invoiceId} is already paid, so it cannot be opened for payment.`
+        : `I couldn't find unpaid invoice ${invoiceId} in your account. Please check the invoice number.`,
+      action: "none",
+      targetInvoiceId: null,
+    };
+  }
+
   // Specific Invoice Status Lookup (e.g. "is GL-1042 paid?", "check invoice GL-1042")
-  const idMatch = text.match(/\b([a-z]{2}-\d{3,5})\b/i);
-  if (idMatch || /(status of|check invoice|is.*paid|check.*bill)/i.test(text)) {
-    const targetId = idMatch ? idMatch[1].toUpperCase() : null;
+  if (invoiceId && /(status of|invoice status|check invoice|is.*paid|check.*bill)/i.test(text)) {
+    const targetId = invoiceId;
     if (targetId) {
       const found = allInvoices.find((i) => i.invoiceId.toUpperCase() === targetId);
       if (found) {
@@ -258,7 +392,7 @@ function heuristicAssistant({ lastMessageText, unpaidInvoices, paidInvoices = []
   }
 
   if (
-    /(show|list|view|get|what|check).*(invoice|bill|unpaid|due|owe)/i.test(text) ||
+    /(show|list|view|get|what|check|kaami|kaatu|காட்டு|காட்டுங்கள்).*(invoice|bill|unpaid|due|owe|பில்|இன்வாய்ஸ்)/i.test(text) ||
     /^(invoices|bills|unpaid)$/i.test(text)
   ) {
     return {
@@ -276,16 +410,16 @@ function heuristicAssistant({ lastMessageText, unpaidInvoices, paidInvoices = []
     };
   }
 
-  // Bulk Payment (NC-09)
-  if (/(pay all|pay both|pay everything|settle all)/i.test(text)) {
+  // Bulk payment requests in English and common Tamil/Tanglish phrasing.
+  if (/(pay all|pay both|pay everything|settle all|all.*(pay|panna|செலுத்த)|அனைத்தையும்.*(செலுத்த|கட்டு))/i.test(text)) {
     return {
       action: "prepare_bulk_payment",
       targetInvoiceIds: ["all"],
     };
   }
 
-  // Single Payment
-  if (/(pay|checkout|settle|send)/i.test(text)) {
+  // Single payment requests, including common Tamil/Tanglish transcripts.
+  if (paymentIntent) {
     for (const inv of unpaidInvoices) {
       if (text.includes(inv.invoiceId.toLowerCase())) {
         return {
@@ -307,7 +441,7 @@ function heuristicAssistant({ lastMessageText, unpaidInvoices, paidInvoices = []
       }
     }
 
-    if (unpaidInvoices.length > 0) {
+    if (unpaidInvoices.length === 1) {
       const first = unpaidInvoices[0];
       return {
         reply: `I found your most urgent invoice from ${first.merchantName} for $${first.amount}. Let me prepare that for you.`,
@@ -315,10 +449,30 @@ function heuristicAssistant({ lastMessageText, unpaidInvoices, paidInvoices = []
         targetInvoiceId: first.invoiceId,
       };
     }
+
+    if (unpaidInvoices.length > 1) {
+      return {
+        reply: tamilSelected
+          ? "Payment-ku pala unpaid invoices irukku. Correct invoice-ai choose pannunga, illa invoice number/merchant name sollunga."
+          : `I found ${unpaidInvoices.length} unpaid invoices. Choose the right one, or tell me its invoice number or merchant name.`,
+        action: "show_invoices",
+        data: { invoices: unpaidInvoices },
+      };
+    }
+
+    return {
+      reply: tamilSelected
+        ? "Unpaid invoice kidaikkala. Merchant name illa invoice number verify pannitu marubadi sollunga."
+        : "I couldn't find an unpaid invoice. Check the merchant name or invoice number and try again.",
+      action: "show_invoices",
+      data: { invoices: [] },
+    };
   }
 
   return {
-    reply: "I'm here to help. You can ask me to check any invoice status, show unpaid bills, or pay a merchant.",
+    reply: tamilSelected
+      ? "Unga request puriyala. Invoice status check panna invoice number sollunga; payment-ku invoice number illa merchant name sollunga."
+      : "I'm here to help. You can ask me to check any invoice status, show unpaid bills, or pay a merchant.",
     action: "none",
     targetInvoiceId: null,
   };
@@ -365,12 +519,54 @@ export async function processAssistantRequest({ messages, context = {}, user = n
       intentDecision = await callGroqAssistant({ messages, unpaidInvoices, paidInvoices, user, isSeller, lang });
     } catch (err) {
       console.warn("Groq assistant call failed, falling back to heuristic:", err?.message || err);
-      intentDecision = heuristicAssistant({ lastMessageText: lastUserMsg, unpaidInvoices, paidInvoices, allInvoices, isSeller });
+      intentDecision = heuristicAssistant({ lastMessageText: lastUserMsg, unpaidInvoices, paidInvoices, allInvoices, isSeller, lang });
     }
   }
 
   if (!intentDecision) {
-    intentDecision = heuristicAssistant({ lastMessageText: lastUserMsg, unpaidInvoices, paidInvoices, allInvoices, isSeller });
+    intentDecision = heuristicAssistant({ lastMessageText: lastUserMsg, unpaidInvoices, paidInvoices, allInvoices, isSeller, lang });
+  }
+
+  // Prefer deterministic invoice-ID matches for explicit open/pay requests,
+  // even if the language model labels them as a status query or action=none.
+  const fallbackDecision = heuristicAssistant({
+    lastMessageText: lastUserMsg,
+    unpaidInvoices,
+    paidInvoices,
+    allInvoices,
+    isSeller,
+    lang,
+  });
+
+  // If the user opens an invoice and then corrects the amount in a follow-up,
+  // keep comparing against that invoice instead of losing the context.
+  const previousInvoiceRequest = [...messages]
+    .slice(0, -1)
+    .reverse()
+    .find((message) => {
+      if (message.role !== "user") return false;
+      const hasInvoiceId = extractInvoiceId(message.content);
+      const hasOpenOrPayIntent =
+        /\b(open|show|view|review|inspect|pay|checkout|settle)\b/i.test(message.content || "");
+      return hasInvoiceId && hasOpenOrPayIntent;
+    });
+  const previousInvoiceId = previousInvoiceRequest
+    ? extractInvoiceId(previousInvoiceRequest.content)
+    : null;
+  const followupAmount = extractExplicitAmount(lastUserMsg);
+  if (previousInvoiceId && followupAmount) {
+    intentDecision = {
+      reply: `I'll check the amount you stated against invoice ${previousInvoiceId}.`,
+      action: "prepare_payment",
+      targetInvoiceId: previousInvoiceId,
+    };
+  }
+
+  if (
+    fallbackDecision.action !== "none" &&
+    (intentDecision?.action === "none" || fallbackDecision.action === "prepare_payment")
+  ) {
+    intentDecision = fallbackDecision;
   }
 
   const { reply, action, targetInvoiceId, targetInvoiceIds, invoiceDetails } = intentDecision;
@@ -644,7 +840,23 @@ export async function processAssistantRequest({ messages, context = {}, user = n
   if (action === "prepare_payment") {
     let invoice = null;
     if (targetInvoiceId) {
-      invoice = unpaidInvoices.find((i) => i.invoiceId === targetInvoiceId);
+      invoice = unpaidInvoices.find(
+        (i) => i.invoiceId.toUpperCase() === String(targetInvoiceId).toUpperCase(),
+      );
+    }
+    // Never substitute a different invoice when the user provided a specific ID.
+    if (!invoice && targetInvoiceId) {
+      const requestedId = String(targetInvoiceId).toUpperCase();
+      const isKnown = allInvoices.some(
+        (item) => item.invoiceId.toUpperCase() === requestedId,
+      );
+      return {
+        reply: isKnown
+          ? `Invoice ${requestedId} is not unpaid, so I can't prepare it for payment.`
+          : `I couldn't find invoice ${requestedId} in your account. Please check the invoice number.`,
+        action: "none",
+        data: { invoices: [] },
+      };
     }
     if (!invoice && unpaidInvoices.length > 0) {
       invoice = unpaidInvoices[0];
@@ -658,11 +870,12 @@ export async function processAssistantRequest({ messages, context = {}, user = n
       };
     }
 
+    const statedPayment = extractExplicitAmount(lastUserMsg);
     const intentFields = {
       recipientName: invoice.merchantName,
       merchantKey: invoice.merchantKey,
-      amount: invoice.amount,
-      currency: invoice.currency,
+      amount: statedPayment?.amount || invoice.amount,
+      currency: statedPayment?.currency || invoice.currency,
       reference: invoice.invoiceId,
       purpose: invoice.description,
     };
@@ -721,10 +934,30 @@ export async function processAssistantRequest({ messages, context = {}, user = n
       modelName: GROQ_MODEL,
     });
 
+    const amountMismatch = matchResult.reasonCodes?.includes("AMOUNT_MISMATCH");
+    const matchExplanation = amountMismatch
+      ? `Invoice number ${invoice.invoiceId} is correct. You said ${intentFields.currency} ${intentFields.amount}, but the invoice requests ${invoice.currency} ${invoice.amount}. The amounts do not match, so I blocked this payment. Please correct the amount before continuing.`
+      : null;
+
+    if (amountMismatch) {
+      return {
+        reply: matchExplanation,
+        action: "amount_mismatch",
+        data: {
+          invoiceId: invoice.invoiceId,
+          statedAmount: intentFields.amount,
+          statedCurrency: intentFields.currency,
+          invoiceAmount: invoice.amount,
+          invoiceCurrency: invoice.currency,
+        },
+      };
+    }
+
     return {
       reply:
+        matchExplanation ||
         reply ||
-        `I've verified your invoice for ${invoice.merchantName} ($${invoice.amount}). Everything looks clear. Please review and click Pay with PayPal.`,
+        `I've verified your invoice for ${invoice.merchantName} (${invoice.currency} ${invoice.amount}). Everything looks clear. Please review and click Pay with PayPal.`,
       action: "prepare_payment",
       data: {
         payment: {
@@ -736,6 +969,8 @@ export async function processAssistantRequest({ messages, context = {}, user = n
           merchantKey: invoice.merchantKey,
           amount: invoice.amount,
           currency: invoice.currency,
+          statedAmount: intentFields.amount,
+          statedCurrency: intentFields.currency,
           description: invoice.description,
           reasonCodes: matchResult.reasonCodes || [],
           checks: matchResult.checks || {},

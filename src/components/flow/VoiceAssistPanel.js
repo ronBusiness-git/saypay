@@ -62,7 +62,10 @@ export default function VoiceAssistPanel({
   const [speaking, setSpeaking] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [areRepliesMuted, setAreRepliesMuted] = useState(false);
   const [input, setInput] = useState("");
+  const speechLanguage = "en-IN";
+  const [voiceError, setVoiceError] = useState("");
   const [liveTranscript, setLiveTranscript] = useState("");
   const [messages, setMessages] = useState([
     { role: "assistant", text: greeting },
@@ -73,13 +76,19 @@ export default function VoiceAssistPanel({
   const isSpeakingRef = useRef(false);
   const isThinkingRef = useRef(false);
   const isMutedRef = useRef(false);
+  const areRepliesMutedRef = useRef(false);
   const recognitionRef = useRef(null);
+  const liveTranscriptRef = useRef("");
 
   const pauseTimerRef = useRef(null);
   const inputRef = useRef(null);
   const scrollRef = useRef(null);
   const messagesRef = useRef(messages);
-  messagesRef.current = messages;
+  const handleUserTextRef = useRef(null);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   useEffect(() => {
     const node = scrollRef.current;
@@ -121,7 +130,6 @@ export default function VoiceAssistPanel({
     if (stage === 3) {
       continuousListeningRef.current = false;
       safeStop();
-      setListening(false);
     }
   }, [stage, safeStop]);
 
@@ -130,15 +138,19 @@ export default function VoiceAssistPanel({
     if (typeof window === "undefined") return;
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
+    if (!SpeechRecognition) {
+      recognitionRef.current = null;
+      return;
+    }
 
     const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
+    recognition.lang = speechLanguage;
     recognition.continuous = true;
     recognition.interimResults = true;
 
     recognition.onstart = () => {
       isRunningRef.current = true;
+      setVoiceError("");
       setListening(true);
     };
 
@@ -156,6 +168,7 @@ export default function VoiceAssistPanel({
       }
 
       const combined = (finalTranscript + interimTranscript).trim();
+      liveTranscriptRef.current = combined;
       setLiveTranscript(combined);
 
       // Control words: pause listening if user says "wait", "stop", "hold on", "pause"
@@ -173,22 +186,35 @@ export default function VoiceAssistPanel({
       // Reset silence debounce timer while user continues talking
       if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
 
-      // Auto-execute after 1.25s of silence (Task 6)
+      // Give the speaker time to pause between words before sending the transcript.
       if (combined.length > 2) {
         pauseTimerRef.current = setTimeout(() => {
+          const transcript = liveTranscriptRef.current.trim();
+          if (!transcript) return;
+          liveTranscriptRef.current = "";
           setLiveTranscript("");
           safeStop();
-          handleUserText(combined, true);
-        }, 1250);
+          handleUserTextRef.current?.(transcript, true);
+        }, 2200);
       }
     };
 
     recognition.onerror = (event) => {
       const errType = event?.error;
-      // Benign errors: do not cancel continuous listening session
-      if (errType === "no-speech" || errType === "aborted") {
+      if (errType === "aborted") {
         return;
       }
+      continuousListeningRef.current = false;
+      const errorMessages = {
+        "not-allowed": "Microphone permission is blocked. Allow mic access in your browser settings, then try again.",
+        "service-not-allowed": "The browser speech service is unavailable. Try again or type your request.",
+        "no-speech": "No speech was detected. Speak a little louder or tap Finish & Send after speaking.",
+        network: "Speech recognition needs an internet connection. Check your connection and try again.",
+        "audio-capture": "No microphone was detected. Check your microphone or type your request.",
+        "language-not-supported": "This browser does not support English speech recognition. Try typing your request or use a supported browser.",
+      };
+      setListening(false);
+      setVoiceError(errorMessages[errType] || `Speech recognition failed (${errType || "unknown error"}). Try again or type your request.`);
       console.warn("Speech recognition notice:", errType);
     };
 
@@ -221,7 +247,7 @@ export default function VoiceAssistPanel({
 
   // Echo speaks softly with natural voice
   const speak = (text) => {
-    if (!voiceEnabled || isMutedRef.current) return;
+    if (!voiceEnabled || areRepliesMutedRef.current) return;
 
     // Pause recognition while Echo speaks to prevent Echo talking to itself
     isSpeakingRef.current = true;
@@ -229,6 +255,7 @@ export default function VoiceAssistPanel({
     safeStop();
 
     speakSoftly(text, {
+      lang: speechLanguage,
       onEnd: () => {
         isSpeakingRef.current = false;
         setSpeaking(false);
@@ -245,6 +272,7 @@ export default function VoiceAssistPanel({
    */
   const handleUserText = async (text, useVoice) => {
     const trimmed = text.trim();
+    setVoiceError("");
     if (!trimmed) {
       const fallback =
         "I'm sorry, I didn't catch that. I'm happy to help you check or pay your invoices. Could you please repeat that?";
@@ -297,45 +325,70 @@ export default function VoiceAssistPanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: nextMessages.map((m) => ({ role: m.role, content: m.text })),
+          lang: speechLanguage,
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
+      if (!res.ok || data?.error) {
+        const message =
+          (typeof data?.error === "string" ? data.error : data?.error?.message) ||
+          data?.message ||
+          `Assistant request failed (${res.status}). Please try again.`;
+        throw new Error(message);
+      }
+      if (!data || typeof data !== "object") {
+        throw new Error("The assistant returned an unreadable response. Please try again.");
+      }
       isThinkingRef.current = false;
       setIsThinking(false);
 
       // Requirement 3: If preparing payment, stop microphone and require manual click
-      if (data.action === "prepare_payment") {
+      if (data.action === "prepare_payment" || data.action === "prepare_bulk_payment") {
         continuousListeningRef.current = false;
         safeStop();
         setListening(false);
+        if (!data.data?.payment) {
+          throw new Error("The assistant did not return payment details. Try saying the invoice number or merchant again.");
+        }
       }
 
       const reply = data.reply || "I've checked that for you.";
 
-      // Synchronous Voice & Text Rendering
+      // Voice input gets a spoken reply; typed input stays text unless Read aloud is clicked.
       setMessages((current) => [
         ...current,
         { role: "assistant", text: reply },
       ]);
 
-      if (useVoice) {
-        speak(reply);
-      }
-
+      if (useVoice) speak(reply);
       onAssistantResult?.(data);
+      if (
+        continuousListeningRef.current &&
+        !isMutedRef.current &&
+        stage !== 3
+      ) {
+        setTimeout(safeStart, 300);
+      }
     } catch (err) {
       console.warn("Echo assistant call error:", err);
       isThinkingRef.current = false;
       setIsThinking(false);
-      const fallback = "I encountered a brief connection error. Please try again.";
+      const fallback = `I couldn't process that request. ${err?.message || "Check your connection and try again."}`;
       setMessages((current) => [
         ...current,
         { role: "assistant", text: fallback },
       ]);
       if (useVoice) speak(fallback);
+      if (continuousListeningRef.current && !isMutedRef.current) {
+        setTimeout(safeStart, 300);
+      }
     }
   };
+
+  useEffect(() => {
+    handleUserTextRef.current = handleUserText;
+  });
 
   // Toggle main microphone
   const handleOrbClick = () => {
@@ -351,11 +404,22 @@ export default function VoiceAssistPanel({
       if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
       safeStop();
       setListening(false);
-      if (liveTranscript.trim()) {
-        const text = liveTranscript;
+      const transcript = liveTranscriptRef.current.trim() || liveTranscript.trim();
+      liveTranscriptRef.current = "";
+      if (transcript) {
+        const text = transcript;
         setLiveTranscript("");
         handleUserText(text, true);
+      } else {
+        setVoiceError("I didn't catch any speech. Try again, or type your request.");
       }
+      return;
+    }
+
+    if (!recognitionRef.current) {
+      setVoiceError("Voice recognition is unavailable in this browser. Try Chrome or Edge, or type your request.");
+      setMode("manual");
+      setTimeout(() => inputRef.current?.focus(), 30);
       return;
     }
 
@@ -366,6 +430,8 @@ export default function VoiceAssistPanel({
     setIsMuted(false);
     continuousListeningRef.current = true;
     setLiveTranscript("");
+    liveTranscriptRef.current = "";
+    setVoiceError("");
     safeStart();
   };
 
@@ -382,6 +448,18 @@ export default function VoiceAssistPanel({
       continuousListeningRef.current = false;
       safeStop();
       setListening(false);
+    }
+  };
+
+  const handleToggleReplyMute = () => {
+    const nextMuted = !areRepliesMutedRef.current;
+    areRepliesMutedRef.current = nextMuted;
+    setAreRepliesMuted(nextMuted);
+
+    if (nextMuted) {
+      stopSpeaking();
+      isSpeakingRef.current = false;
+      setSpeaking(false);
     }
   };
 
@@ -408,6 +486,12 @@ export default function VoiceAssistPanel({
     setTimeout(() => inputRef.current?.focus(), 30);
   };
 
+  const latestAssistantMessageIndex = messages.reduce(
+    (latestIndex, message, index) =>
+      message.role === "assistant" ? index : latestIndex,
+    -1,
+  );
+
   return (
     <section
       className={`overflow-hidden rounded-2xl transition-all duration-300 ${
@@ -417,7 +501,7 @@ export default function VoiceAssistPanel({
       }`}
     >
       {/* Assistant header */}
-      <div className="flex items-center justify-between gap-3 border-b border-[#DFE5E8] px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#DFE5E8] px-4 py-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#EAF7F1] text-primary-container">
             <span className="material-symbols-outlined text-[20px]">
@@ -436,6 +520,24 @@ export default function VoiceAssistPanel({
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleToggleReplyMute}
+            aria-label={areRepliesMuted ? "Unmute AI replies" : "Mute AI replies"}
+            title={areRepliesMuted ? "Unmute AI replies" : "Mute AI replies"}
+            aria-pressed={areRepliesMuted}
+            className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 font-label-sm text-label-sm font-semibold transition-colors ${
+              areRepliesMuted
+                ? "border-[#FECACA] bg-[#FFF5F5] text-[#DC2626] hover:bg-[#FEE2E2]"
+                : "border-[#DFE5E8] bg-white text-secondary hover:text-on-surface hover:bg-[#F7F8FA]"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[15px]">
+              {areRepliesMuted ? "volume_off" : "volume_up"}
+            </span>
+            <span>{areRepliesMuted ? "Replies muted" : "Mute replies"}</span>
+          </button>
+
           {/* Mute button (Task 5) */}
           <button
             type="button"
@@ -450,7 +552,7 @@ export default function VoiceAssistPanel({
             <span className="material-symbols-outlined text-[15px]">
               {isMuted ? "mic_off" : "mic"}
             </span>
-            <span>{isMuted ? "Unmute" : "Mute"}</span>
+            <span>{isMuted ? "Unmute mic" : "Mute mic"}</span>
           </button>
 
           <VoiceStatusPill
@@ -542,11 +644,24 @@ export default function VoiceAssistPanel({
               {stage === 3
                 ? "Human authorization required. Please review details on the right and click 'Pay with PayPal'."
                 : listening && !isMuted
-                ? liveTranscript || "Auto-executes when you pause. Say 'wait' to pause, or 'thanks bye' when done."
+                ? liveTranscript || "Speak clearly. I’ll send it after a short pause, or tap Finish & Send when you’re done."
                 : role === "seller"
                 ? "Try: “Create invoice for buyer@saypay.app for 3 items $45”"
                 : "Try: “Pay GreenLeaf coffee invoice” or “Show unpaid bills”"}
             </p>
+            {voiceEnabled && stage !== 3 && (
+              <p className="mt-3 font-body-sm text-body-sm text-secondary">
+                Voice input and spoken replies are set to English (India).
+              </p>
+            )}
+            {voiceError && (
+              <p
+                className="mx-auto mt-2 max-w-xl rounded-lg border border-[#FECACA] bg-[#FFF5F5] px-3 py-2 text-left font-body-sm text-body-sm text-[#991B1B]"
+                role="alert"
+              >
+                {voiceError}
+              </p>
+            )}
             {listening && !isMuted && (
               <button
                 type="button"
@@ -608,7 +723,34 @@ export default function VoiceAssistPanel({
                     Echo
                   </span>
                 )}
-                {message.text}
+                <p>{message.text}</p>
+                {message.role === "assistant" && voiceEnabled && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => speak(message.text)}
+                      className="inline-flex min-h-[30px] items-center gap-1 rounded-md border border-[#DFE5E8] bg-white px-2 py-1 font-label-sm text-label-sm font-semibold text-secondary hover:bg-[#EAF7F1] hover:text-primary"
+                      aria-label={`Read this Echo response aloud: ${message.text}`}
+                    >
+                      <span className="material-symbols-outlined text-[14px]">volume_up</span>
+                      Read aloud
+                    </button>
+                    {index === latestAssistantMessageIndex && (
+                      <button
+                        type="button"
+                        onClick={handleToggleReplyMute}
+                        aria-pressed={areRepliesMuted}
+                        aria-label={areRepliesMuted ? "Unmute AI replies" : "Mute AI replies"}
+                        className="inline-flex min-h-[30px] items-center gap-1 rounded-md border border-[#DFE5E8] bg-white px-2 py-1 font-label-sm text-label-sm font-semibold text-secondary hover:bg-[#F7F8FA]"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">
+                          {areRepliesMuted ? "volume_off" : "volume_mute"}
+                        </span>
+                        {areRepliesMuted ? "Unmute replies" : "Mute replies"}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ))}

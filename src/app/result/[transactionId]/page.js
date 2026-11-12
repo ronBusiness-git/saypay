@@ -174,14 +174,6 @@ function ResultView({ params, onOpenAuditLog }) {
     checkId: liveTx.transaction.checkId || DEMO_PAYMENT.checkId,
   } : DEMO_PAYMENT;
 
-  const readAloud = () => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    const utterance = new window.SpeechSynthesisUtterance(state.readAloud);
-    utterance.lang = "en-US";
-    window.speechSynthesis.speak(utterance);
-  };
-
   const primaryHref = state.primaryAction.href;
 
   return (
@@ -259,15 +251,6 @@ function ResultView({ params, onOpenAuditLog }) {
                 <p className="mt-1.5 font-body-sm text-body-sm text-secondary">{state.subline}</p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={readAloud}
-              disabled={!voiceEnabled}
-              className={`inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-[10px] border bg-white px-3 py-2 font-label-md text-label-md font-semibold transition-colors hover:bg-white/70 disabled:cursor-not-allowed disabled:opacity-50 ${tone.text} ${tone.border}`}
-            >
-              <span className="material-symbols-outlined text-[18px]">volume_up</span>
-              Read aloud
-            </button>
           </div>
 
           {state.key === "pending" && (

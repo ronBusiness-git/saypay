@@ -64,14 +64,6 @@ function ConfirmCheckout({ params, onOpenAuditLog }) {
     };
   }, []);
 
-  const readQuestion = () => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    const utterance = new window.SpeechSynthesisUtterance(question);
-    utterance.lang = "en-US";
-    window.speechSynthesis.speak(utterance);
-  };
-
   const startListening = () => {
     if (confirmed || listening) return;
     setHeard(null);
@@ -254,14 +246,6 @@ function ConfirmCheckout({ params, onOpenAuditLog }) {
                 </p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={readQuestion}
-              className="inline-flex min-h-[40px] shrink-0 items-center gap-1.5 self-start rounded-[10px] border border-[#BFDBFE] bg-white px-3 py-2 font-label-md text-label-md font-semibold text-[#1D4ED8] hover:bg-[#EFF6FF]"
-            >
-              <span className="material-symbols-outlined text-[18px]">volume_up</span>
-              Read aloud
-            </button>
           </div>
         </section>
 

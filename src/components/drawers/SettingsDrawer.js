@@ -5,7 +5,6 @@ import React, { useState } from "react";
 export default function SettingsDrawer({ isOpen, onClose }) {
   const [maxAmount, setMaxAmount] = useState("250.00");
   const [language, setLanguage] = useState("en-US");
-  const [readAloud, setReadAloud] = useState(true);
   const [voiceConfirmation, setVoiceConfirmation] = useState(true);
   const [autoListen, setAutoListen] = useState(false);
 
@@ -128,24 +127,6 @@ export default function SettingsDrawer({ isOpen, onClose }) {
               </select>
             </div>
 
-            {/* Toggle 1: Read Aloud */}
-            <div className="flex items-center justify-between p-3 rounded-xl border border-[#DFE5E8] bg-surface-bright">
-              <div>
-                <p className="font-label-md text-label-md text-on-surface font-semibold">
-                  Read aloud safety results
-                </p>
-                <p className="text-[12px] text-secondary">
-                  Browser synthesizes audio summary of verdicts
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                checked={readAloud}
-                onChange={(e) => setReadAloud(e.target.checked)}
-                className="h-5 w-5 rounded border-[#DFE5E8] text-primary focus:ring-primary cursor-pointer"
-              />
-            </div>
-
             {/* Toggle 2: Voice Confirmation */}
             <div className="flex items-center justify-between p-3 rounded-xl border border-[#DFE5E8] bg-surface-bright">
               <div>
@@ -153,7 +134,7 @@ export default function SettingsDrawer({ isOpen, onClose }) {
                   Voice confirmation passkey
                 </p>
                 <p className="text-[12px] text-secondary">
-                  Allow saying "Confirm Pay" or "Cancel" on Stage 4
+                  Allow saying &quot;Confirm Pay&quot; or &quot;Cancel&quot; on Stage 4
                 </p>
               </div>
               <input

@@ -2,15 +2,15 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import FlowPageLayout from "../../components/flow/FlowPageLayout.js";
 import VoiceAssistPanel from "../../components/flow/VoiceAssistPanel.js";
 import LoadingScreen from "../../components/ui/LoadingScreen.js";
-import { speakSoftly } from "../../lib/voice.js";
 import { useDemoSession } from "../../lib/demoAuth.js";
 
 export default function NewPaymentCheckPage({ onOpenAuditLog }) {
   const router = useRouter();
+  const pathname = usePathname();
   const session = useDemoSession();
   const isSeller = session?.role === "seller";
 
@@ -26,22 +26,42 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
 
   useEffect(() => {
     fetchInvoices();
+  }, [session?.role]);
 
-    // Check if activePayment was set by dashboard assistant handoff
-    if (typeof window !== "undefined") {
-      try {
-        const stored = sessionStorage.getItem("pendingPaymentCheck");
-        if (stored) {
-          sessionStorage.removeItem("pendingPaymentCheck");
-          const parsed = JSON.parse(stored);
-          if (parsed && parsed.checkId) {
-            setActivePayment(parsed);
-            setCurrentStage(3);
-          }
+  useEffect(() => {
+    // Read each navigation handoff when returning to this route. Next.js can
+    // preserve this client page's state across navigations, so mount-only reads
+    // leave the previous payment visible until a full refresh.
+    try {
+      const stored = sessionStorage.getItem("pendingPaymentCheck");
+      if (stored) {
+        sessionStorage.removeItem("pendingPaymentCheck");
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.checkId) {
+          // Route navigation must sync this external session handoff immediately.
+          // eslint-disable-next-line react-hooks/set-state-in-effect
+          setActivePayment(parsed);
+          setCreatedInvoice(null);
+          setCompletedReceipt(null);
+          setPaymentError(null);
+          setCurrentStage(3);
+          return;
         }
+      }
+    } catch (error) {
+      console.warn("Could not read payment handoff:", error);
+      try {
+        sessionStorage.removeItem("pendingPaymentCheck");
       } catch {}
     }
-  }, [session?.role]);
+
+    // No new handoff means this is a fresh check, not the last payment's view.
+    setActivePayment(null);
+    setCreatedInvoice(null);
+    setCompletedReceipt(null);
+    setPaymentError(null);
+    setCurrentStage(1);
+  }, [pathname]);
 
   async function fetchInvoices() {
     try {
@@ -65,7 +85,17 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
     if (!result) return;
     setPaymentError(null);
 
-    if (result.action === "prepare_payment" && result.data?.payment) {
+    if (result.action === "amount_mismatch") {
+      // Keep the warning in chat; a wrong amount must not open the payment review.
+      setActivePayment(null);
+      setCreatedInvoice(null);
+      setCompletedReceipt(null);
+      setIsScreening(false);
+      setCurrentStage(1);
+    } else if (
+      (result.action === "prepare_payment" || result.action === "prepare_bulk_payment") &&
+      result.data?.payment
+    ) {
       // Automatic Multi-Step Progression with Timed Transitions
       // Step 1: Capture -> Step 2: Safety Check (1s animated screening) -> Step 3: Review & Confirm
       setCreatedInvoice(null);
@@ -79,17 +109,6 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
         setActivePayment(result.data.payment);
         setCurrentStage(3);
 
-        // Requirement 4: Explain check status to user via voice
-        const p = result.data.payment;
-        if (p.status === "CLEAR") {
-          speakSoftly(
-            `MatchCheck verified. Deterministic rules passed for ${p.merchantName}, amount ${p.amount} ${p.currency}. Reference matched and no duplicate found. Please click Pay with PayPal below to authorize.`
-          );
-        } else {
-          speakSoftly(
-            `Notice: MatchCheck alert. Status is ${p.status}. ${p.reasonCodes?.join(", ") || "Please review invoice details before proceeding."}`
-          );
-        }
       }, 1000);
     } else if (result.action === "invoice_created" && result.data?.invoice) {
       setCreatedInvoice(result.data.invoice);
@@ -97,10 +116,6 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
       setCompletedReceipt(null);
       setCurrentStage(4);
       fetchInvoices();
-      const inv = result.data.invoice;
-      speakSoftly(
-        `Invoice ${inv.invoiceId} for ${inv.buyerEmail} has been created and dispatched for ${inv.amount} dollars.`
-      );
     } else if (result.action === "show_invoices") {
       setActivePayment(null);
       setCreatedInvoice(null);
@@ -163,23 +178,12 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
         setActivePayment(paymentData);
         setCurrentStage(3);
 
-        // Requirement 4: Explain check status to user via voice
-        if (paymentData.status === "CLEAR") {
-          speakSoftly(
-            `MatchCheck verified. Deterministic rules passed for ${paymentData.merchantName}, amount ${paymentData.amount} ${paymentData.currency}. Reference matched and no duplicate found. Please click Pay with PayPal below to authorize.`
-          );
-        } else {
-          speakSoftly(
-            `Notice: MatchCheck alert. Status is ${paymentData.status}. ${paymentData.reasonCodes?.join(", ") || "Please review invoice details before proceeding."}`
-          );
-        }
       }, 1000);
     } catch (err) {
       setIsScreening(false);
       setCurrentStage(1);
       const msg = err?.message || String(err) || "Failed to verify invoice";
       setPaymentError(msg);
-      speakSoftly(`Notice: ${msg}`);
     }
   };
 
@@ -249,15 +253,9 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
       setActivePayment(null);
       fetchInvoices();
 
-      // Echo confirms receipt via voice
-      speakSoftly(
-        `Payment completed via PayPal Sandbox. Amount settled: ${activePayment.amount} dollars to ${activePayment.merchantName}. Receipt recorded.`
-      );
     } catch (err) {
       const msg = err?.message || String(err) || "PayPal Sandbox payment failed";
       setPaymentError(msg);
-      // Echo speaks the error to user (Task 7)
-      speakSoftly(`Payment error: ${msg}`);
     } finally {
       setPaying(false);
     }
@@ -523,6 +521,12 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
                     <strong className="text-[#DC2626]">AMOUNT_EXCEEDS_LIMIT:</strong> The amount exceeds the configured workspace limit ($500.00).
                   </p>
                 )}
+                {activePayment.reasonCodes?.includes("AMOUNT_MISMATCH") && (
+                  <p className="text-secondary">
+                    <strong className="text-[#DC2626]">AMOUNT_MISMATCH:</strong>{" "}
+                    You said {activePayment.statedCurrency || activePayment.currency} {activePayment.statedAmount || "(amount not provided)"}, but invoice {activePayment.invoiceId} requests {activePayment.currency} {activePayment.amount}. Payment is blocked until you review the amount.
+                  </p>
+                )}
                 {activePayment.reasonCodes?.length === 0 && (
                   <p className="text-secondary">
                     A deterministic mismatch rule halted payment pre-authorization.
@@ -591,8 +595,12 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
                       : "text-[#DC2626]"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[16px]">check_circle</span>
-                  <span>Amount matched</span>
+                  <span className="material-symbols-outlined text-[16px]">
+                    {activePayment.checks?.amount?.status === "MISMATCH" ? "cancel" : "check_circle"}
+                  </span>
+                  <span>
+                    {activePayment.checks?.amount?.status === "MISMATCH" ? "Amount mismatch" : "Amount matched"}
+                  </span>
                 </div>
                 <div
                   className={`flex items-center gap-1.5 font-medium ${

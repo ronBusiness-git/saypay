@@ -28,30 +28,6 @@ const CHECK_RESULT_STYLES = {
   FAIL: "bg-[#FEE2E2] text-[#DC2626] border-[#FECACA]",
 };
 
-function ReadAloudButton({ text, tone }) {
-  const speak = () => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-      return;
-    }
-    window.speechSynthesis.cancel();
-    const utterance = new window.SpeechSynthesisUtterance(text);
-    utterance.lang = "en-US";
-    utterance.rate = 1;
-    window.speechSynthesis.speak(utterance);
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={speak}
-      className={`inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-[10px] border bg-white px-3 py-2 font-label-md text-label-md font-semibold transition-colors hover:bg-white/70 ${tone.text} ${tone.border}`}
-    >
-      <span className="material-symbols-outlined text-[18px]">volume_up</span>
-      Read aloud
-    </button>
-  );
-}
-
 function FieldStatus({ status, label }) {
   const style = RESULT_STYLES[status] || RESULT_STYLES.match;
   return (
@@ -121,10 +97,6 @@ export default function MatchCheckContent({
               </p>
             </div>
           </div>
-          <ReadAloudButton
-            text={`${state.statusLabel}. ${state.heroReason}`}
-            tone={tone}
-          />
         </div>
 
         {state.noOrderNote && (

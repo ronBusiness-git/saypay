@@ -20,14 +20,6 @@ export default function NewCheckClarifyPage({ onOpenAuditLog }) {
   const router = useRouter();
   const [answer, setAnswer] = useState("");
 
-  const readQuestion = () => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    const utterance = new window.SpeechSynthesisUtterance(AI_QUESTION);
-    utterance.lang = "en-US";
-    window.speechSynthesis.speak(utterance);
-  };
-
   const appendAnswer = (text) => {
     setAnswer((current) => (current.trim() ? `${current.trim()} ${text}` : text));
   };
@@ -98,14 +90,6 @@ export default function NewCheckClarifyPage({ onOpenAuditLog }) {
                 </p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={readQuestion}
-              className="inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-[10px] border border-[#FDE68A] bg-white px-3 py-2 font-label-md text-label-md font-semibold text-[#B45309] hover:bg-[#FFFBEB]"
-            >
-              <span className="material-symbols-outlined text-[17px]">volume_up</span>
-              Read aloud
-            </button>
           </div>
 
           <div className="mt-4 rounded-xl border border-[#FDE68A] bg-white p-3">
