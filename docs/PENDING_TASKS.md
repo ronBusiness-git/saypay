@@ -6,6 +6,43 @@ This document tracks all user requirements from the prompt dated 2026-11-12 acro
 
 ## Active Task Punch List (Execute One by One with Playwright Verification)
 
+- [x] **REQ-01: Universal Invoice Querying by Date, Status (PAID vs UNPAID), and Details**
+  - Expanded `processAssistantRequest`, `callGroqAssistant`, and `heuristicAssistant` in `src/lib/assistant.js` to load all invoices (`allInvoices`, `unpaidInvoices`, `paidInvoices`).
+  - Echo can now answer any query: "Is GL-1042 paid?", "Check invoice TN-2210", "Show paid invoices", "What invoices are due in November?", "How much did I pay to TechNova?", and reports full details conversationally with real database verification.
+
+- [x] **REQ-02: End of Conversation Stops Voice Loop Without Retriggering**
+  - Updated `VoiceAssistPanel.js` so that conversational exit phrases ("bye", "goodbye", "stop", "cancel", "thank you", "thanks", "ok thanks bye", "that's all") permanently set `continuousListeningRef.current = false` and invoke `safeStop()`.
+  - Added guards in `speakSoftly`'s `onEnd` callback to ensure recognition is never re-triggered when conversation has ended or when in Stage 3.
+
+- [x] **REQ-03: PayPal Payment Review Stage (Stage 3) Disables Mic for Manual Approval**
+  - In `VoiceAssistPanel.js`, when `stage === 3` or when payment preparation finishes, microphone is automatically stopped (`continuousListeningRef.current = false; safeStop(); setListening(false);`).
+  - `safeStart` is explicitly blocked in Stage 3, displaying "MatchCheck Verified · Manual authorization required", ensuring the human user must manually click "Pay with PayPal".
+
+- [x] **REQ-04: Echo Explains Safety Check Status Aloud to User**
+  - When safety screening finishes and advances to Stage 3 MatchCheck card, Echo automatically speaks the safety verdict aloud to the user using `speakSoftly`, stating verified merchant, amount, reference match, duplicate check status, and prompt to authorize.
+
+- [x] **REQ-05: History Page Automatic Fresh Fetch, Live Loader, and Empty State**
+  - In `src/app/history/page.js`:
+    - Auto-fetches latest records on mount with cache-busting `cache: "no-store"` and timestamp query.
+    - Displays a centered spinner and loading text while synchronizing with MongoDB Atlas.
+    - If no records match search/filter or if collection is empty, displays a polished "No records found" empty state with clear filters button.
+
+- [x] **REQ-06: Full-Screen Logout Loading Overlay Including Navbar**
+  - In `src/components/layout/TopNavbar.js`: Added `isLoggingOut` state. When logout is clicked, renders a full-screen overlay (`fixed inset-0 z-50 bg-white/95 backdrop-blur-sm`) covering the entire screen including the navbar and banner with "Signing out..." spinner and text, then redirects to `/login`.
+
+- [x] **REQ-07: Route Protection for Unauthenticated Users**
+  - In `src/components/layout/AppShell.js`: Added route guard with `useDemoSession()`. If an unauthenticated user attempts to visit any protected route (`/`, `/new-check`, `/history`, `/checks/*`, etc.), they are immediately blocked with an authenticating screen and redirected to `/login`.
+
+- [x] **REQ-08: Merchant-Specific Stepper & Process Stages**
+  - In `src/lib/demoFlowData.js`: Defined `MERCHANT_FLOW_STAGES`:
+    1. Capture (Billing details)
+    2. Validation (Items & tax check)
+    3. Review & Issue (Confirm & create)
+    4. Dispatched (Invoice sent & logged)
+  - Updated `FlowStepper.js`, `FlowPageLayout.js`, and `new-check/page.js` to accept `role={isSeller ? "seller" : "buyer"}` and render merchant-tailored flow titles, subtitles, chips, and progression states.
+
+---
+
 - [x] **TASK-01: Fix `/api/paypal/create-order` 404 from Unpaid Invoice List & Proper Error String Formatting**
   - Bug: Clicking "Review & Pay" on the unpaid invoices list passed a dummy `chk_` ID that was never saved to MongoDB, causing a 404 in `create-order`.
   - Fix: Wired "Review & Pay" to call `/api/assistant` with `{ context: { selectedInvoiceId: inv.invoiceId } }` so a real, verified `PaymentCheck` is created in MongoDB before displaying the MatchCheck card. Added atomic fallback upsert in `/api/paypal/create-order/route.js` so any unpersisted `chk_` or invoice reference is auto-created.

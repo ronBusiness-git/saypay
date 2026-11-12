@@ -25,6 +25,33 @@ export const FLOW_STAGES = [
   },
 ];
 
+export const MERCHANT_FLOW_STAGES = [
+  {
+    number: 1,
+    title: "Capture",
+    subtitle: "Billing details",
+    icon: "record_voice_over",
+  },
+  {
+    number: 2,
+    title: "Validation",
+    subtitle: "Items & tax check",
+    icon: "fact_check",
+  },
+  {
+    number: 3,
+    title: "Review & Issue",
+    subtitle: "Confirm & create",
+    icon: "assignment_turned_in",
+  },
+  {
+    number: 4,
+    title: "Dispatched",
+    subtitle: "Invoice sent & logged",
+    icon: "send",
+  },
+];
+
 export const TONE = {
   clear: {
     text: "text-[#107E3E]",

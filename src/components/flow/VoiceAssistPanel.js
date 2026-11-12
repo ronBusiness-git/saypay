@@ -89,6 +89,7 @@ export default function VoiceAssistPanel({
   // Safe Start helper to prevent InvalidStateError on SpeechRecognition
   const safeStart = useCallback(() => {
     if (typeof window === "undefined") return;
+    if (stage === 3) return; // Requirement 3: Don't turn mic on in Stage 3 Payment review
     if (isMutedRef.current || !voiceEnabled) return;
     if (isSpeakingRef.current || isThinkingRef.current) return;
     if (isRunningRef.current) return;
@@ -104,7 +105,7 @@ export default function VoiceAssistPanel({
         console.warn("Speech recognition start notice:", err?.message || err);
       }
     }
-  }, [voiceEnabled]);
+  }, [voiceEnabled, stage]);
 
   // Safe Stop helper
   const safeStop = useCallback(() => {
@@ -114,6 +115,15 @@ export default function VoiceAssistPanel({
       recognizer.stop();
     } catch {}
   }, []);
+
+  // Requirement 3: Ensure mic is paused/stopped in Stage 3 (PayPal Payment side)
+  useEffect(() => {
+    if (stage === 3) {
+      continuousListeningRef.current = false;
+      safeStop();
+      setListening(false);
+    }
+  }, [stage, safeStop]);
 
   // Initialize SpeechRecognition once
   useEffect(() => {
@@ -222,8 +232,8 @@ export default function VoiceAssistPanel({
       onEnd: () => {
         isSpeakingRef.current = false;
         setSpeaking(false);
-        // Hands-Free Continuous Mode: auto-resume listening when Echo finishes speaking
-        if (continuousListeningRef.current && !isMutedRef.current) {
+        // Requirement 2 & 3: Only auto-resume if continuousListening is explicitly active, not muted, and not in payment stage
+        if (continuousListeningRef.current && !isMutedRef.current && stage !== 3) {
           setTimeout(safeStart, 300);
         }
       },
@@ -254,9 +264,9 @@ export default function VoiceAssistPanel({
       return;
     }
 
-    // Check closing words like "no", "that's all", "bye", "cancel", "ok thanks bye"
+    // Check closing words (Requirement 2: no retriggering)
     if (
-      /^(no|no thanks|that's all|nothing|bye|cancel|all good|ok thanks bye|thanks bye)$/i.test(
+      /^(no|no thanks|that's all|nothing|bye|goodbye|cancel|all good|ok thanks bye|thanks bye|thank you|thanks)$/i.test(
         trimmed
       )
     ) {
@@ -264,7 +274,7 @@ export default function VoiceAssistPanel({
       safeStop();
       setListening(false);
       const byeMsg =
-        "Glad I could help! Have a great day. Feel free to tap the microphone whenever you need assistance.";
+        "Glad I could help! Feel free to tap the microphone whenever you need assistance.";
       setMessages((current) => [...current, { role: "assistant", text: byeMsg }]);
       if (useVoice) speak(byeMsg);
       return;
@@ -293,6 +303,13 @@ export default function VoiceAssistPanel({
       const data = await res.json();
       isThinkingRef.current = false;
       setIsThinking(false);
+
+      // Requirement 3: If preparing payment, stop microphone and require manual click
+      if (data.action === "prepare_payment") {
+        continuousListeningRef.current = false;
+        safeStop();
+        setListening(false);
+      }
 
       const reply = data.reply || "I've checked that for you.";
 
@@ -509,6 +526,8 @@ export default function VoiceAssistPanel({
             <p className="font-label-lg text-label-lg font-semibold text-on-surface">
               {isMuted
                 ? "Microphone is muted"
+                : stage === 3
+                ? "MatchCheck Verified · Ready for Payment"
                 : listening
                 ? "Listening hands-free… speak naturally"
                 : speaking
@@ -520,7 +539,9 @@ export default function VoiceAssistPanel({
                 : "Voice is paused"}
             </p>
             <p className="mx-auto mt-1 max-w-[32ch] font-body-sm text-body-sm text-secondary">
-              {listening && !isMuted
+              {stage === 3
+                ? "Human authorization required. Please review details on the right and click 'Pay with PayPal'."
+                : listening && !isMuted
                 ? liveTranscript || "Auto-executes when you pause. Say 'wait' to pause, or 'thanks bye' when done."
                 : role === "seller"
                 ? "Try: “Create invoice for buyer@saypay.app for 3 items $45”"

@@ -31,7 +31,8 @@ export default function HistoryPage() {
   const gridApiRef = useRef(null);
 
   useEffect(() => {
-    fetch("/api/transactions?limit=100")
+    setLoading(true);
+    fetch(`/api/transactions?limit=100&_t=${Date.now()}`, { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data && Array.isArray(data.items)) {
@@ -259,18 +260,56 @@ export default function HistoryPage() {
         </div>
       </div>
 
-      {/* AG Grid Container */}
-      <div className="bg-surface-container-lowest border border-outline-variant rounded-[16px] overflow-hidden shadow-[0_1px_3px_rgba(21,35,45,0.04),0_4px_12px_rgba(21,35,45,0.03)]">
-        <div className="p-1.5 sm:p-2">
-          <SayPayGrid
-            variant="history"
-            rowData={gridRows}
-            pagination
-            paginationPageSize={10}
-            onGridReady={handleGridReady}
-            ariaLabel="Transaction history"
-          />
-        </div>
+      {/* AG Grid Container with Live Loading & Empty State */}
+      <div className="bg-surface-container-lowest border border-outline-variant rounded-[16px] overflow-hidden shadow-[0_1px_3px_rgba(21,35,45,0.04),0_4px_12px_rgba(21,35,45,0.03)] min-h-[320px]">
+        {loading ? (
+          <div className="py-24 flex flex-col items-center justify-center gap-3">
+            <div className="h-9 w-9 animate-spin rounded-full border-3 border-[#087F68] border-t-transparent" />
+            <p className="font-label-lg text-label-lg font-semibold text-on-surface">
+              Fetching latest transaction records…
+            </p>
+            <p className="font-body-sm text-body-sm text-secondary">
+              Synchronizing with MongoDB Atlas transactions collection
+            </p>
+          </div>
+        ) : filteredTransactions.length === 0 ? (
+          <div className="py-20 text-center flex flex-col items-center justify-center p-6">
+            <span className="material-symbols-outlined text-[48px] text-secondary/60 mb-2">
+              receipt_long
+            </span>
+            <h3 className="font-headline-sm text-headline-sm font-semibold text-on-surface">
+              No records found
+            </h3>
+            <p className="font-body-sm text-body-sm text-secondary mt-1 max-w-sm">
+              {searchTerm || selectedFilter !== "ALL"
+                ? "No transactions match your current search or status filter. Try clearing filters."
+                : "No completed transactions recorded yet. Complete a payment via PayPal Sandbox to see it here."}
+            </p>
+            {(searchTerm || selectedFilter !== "ALL") && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm("");
+                  setSelectedFilter("ALL");
+                }}
+                className="mt-4 inline-flex items-center gap-1.5 rounded-[10px] border border-[#DFE5E8] bg-white px-3 py-1.5 font-label-md text-label-md font-semibold text-secondary hover:text-on-surface transition-colors"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="p-1.5 sm:p-2">
+            <SayPayGrid
+              variant="history"
+              rowData={gridRows}
+              pagination
+              paginationPageSize={10}
+              onGridReady={handleGridReady}
+              ariaLabel="Transaction history"
+            />
+          </div>
+        )}
 
         {/* Summary Footer */}
         <div className="px-5 py-4 bg-surface-container-lowest border-t border-outline-variant flex flex-col sm:flex-row items-center justify-between gap-4">

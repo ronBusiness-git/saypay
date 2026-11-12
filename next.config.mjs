@@ -49,7 +49,7 @@ const nextConfig = async () => {
     },
     // Performance & prefetching flags
     cacheComponents: true,
-    partialPrefetching: true,
+    partialPrefetching: false,
   };
 };
 

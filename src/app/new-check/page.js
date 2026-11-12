@@ -78,13 +78,29 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
         setIsScreening(false);
         setActivePayment(result.data.payment);
         setCurrentStage(3);
+
+        // Requirement 4: Explain check status to user via voice
+        const p = result.data.payment;
+        if (p.status === "CLEAR") {
+          speakSoftly(
+            `MatchCheck verified. Deterministic rules passed for ${p.merchantName}, amount ${p.amount} ${p.currency}. Reference matched and no duplicate found. Please click Pay with PayPal below to authorize.`
+          );
+        } else {
+          speakSoftly(
+            `Notice: MatchCheck alert. Status is ${p.status}. ${p.reasonCodes?.join(", ") || "Please review invoice details before proceeding."}`
+          );
+        }
       }, 1000);
     } else if (result.action === "invoice_created" && result.data?.invoice) {
       setCreatedInvoice(result.data.invoice);
       setActivePayment(null);
       setCompletedReceipt(null);
-      setCurrentStage(1);
+      setCurrentStage(4);
       fetchInvoices();
+      const inv = result.data.invoice;
+      speakSoftly(
+        `Invoice ${inv.invoiceId} for ${inv.buyerEmail} has been created and dispatched for ${inv.amount} dollars.`
+      );
     } else if (result.action === "show_invoices") {
       setActivePayment(null);
       setCreatedInvoice(null);
@@ -128,11 +144,11 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
 
       setTimeout(() => {
         setIsScreening(false);
+        let paymentData = null;
         if (data.action === "prepare_payment" && data.data?.payment) {
-          setActivePayment(data.data.payment);
-          setCurrentStage(3);
+          paymentData = data.data.payment;
         } else {
-          setActivePayment({
+          paymentData = {
             checkId: "chk_" + inv.invoiceId,
             invoiceId: inv.invoiceId,
             merchantName: inv.merchantName,
@@ -142,8 +158,20 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
             description: inv.description,
             status: "CLEAR",
             canCreateOrder: true,
-          });
-          setCurrentStage(3);
+          };
+        }
+        setActivePayment(paymentData);
+        setCurrentStage(3);
+
+        // Requirement 4: Explain check status to user via voice
+        if (paymentData.status === "CLEAR") {
+          speakSoftly(
+            `MatchCheck verified. Deterministic rules passed for ${paymentData.merchantName}, amount ${paymentData.amount} ${paymentData.currency}. Reference matched and no duplicate found. Please click Pay with PayPal below to authorize.`
+          );
+        } else {
+          speakSoftly(
+            `Notice: MatchCheck alert. Status is ${paymentData.status}. ${paymentData.reasonCodes?.join(", ") || "Please review invoice details before proceeding."}`
+          );
         }
       }, 1000);
     } catch (err) {
@@ -259,6 +287,10 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
     stageNumber = 4;
     statusText = "Settled";
     toneType = "clear";
+  } else if (createdInvoice) {
+    stageNumber = 4;
+    statusText = "Dispatched";
+    toneType = "clear";
   } else if (activePayment) {
     stageNumber = 3;
     if (activePayment.status === "BLOCKED") {
@@ -273,12 +305,13 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
     }
   } else if (isScreening) {
     stageNumber = 2;
-    statusText = "Screening";
+    statusText = isSeller ? "Validating" : "Screening";
     toneType = "pending";
   }
 
   return (
     <FlowPageLayout
+      role={isSeller ? "seller" : "buyer"}
       stage={stageNumber}
       status={statusText}
       tone={toneType}
@@ -286,7 +319,13 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
       onOpenAuditLog={onOpenAuditLog}
       eyebrow={
         isSeller
-          ? "Merchant Voice Billing"
+          ? stageNumber === 4
+            ? "Stage 4 · Invoice Dispatched"
+            : stageNumber === 3
+            ? "Stage 3 · Review & Issue"
+            : stageNumber === 2
+            ? "Stage 2 · Items Validation"
+            : "Stage 1 · Billing Capture"
           : stageNumber === 4
           ? "Stage 4 · PayPal Settlement"
           : stageNumber === 3
@@ -297,7 +336,13 @@ export default function NewPaymentCheckPage({ onOpenAuditLog }) {
       }
       title={
         isSeller
-          ? "Create Invoices via Voice & Track Collections"
+          ? stageNumber === 4
+            ? "Invoice Dispatched & Notification Sent"
+            : stageNumber === 3
+            ? "Review & Confirm Invoice Details"
+            : stageNumber === 2
+            ? "Validating Customer & Line Items"
+            : "Create Invoices via Voice & Track Collections"
           : stageNumber === 4
           ? "Payment Completed via PayPal Sandbox"
           : stageNumber === 3

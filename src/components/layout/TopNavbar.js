@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import SayPayLogo from "../SayPayLogo.js";
@@ -10,6 +10,7 @@ export default function TopNavbar() {
   const pathname = usePathname();
   const router = useRouter();
   const session = useDemoSession();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const isDashboard = pathname === "/";
   const isHistory =
     pathname.startsWith("/history") ||
@@ -17,12 +18,35 @@ export default function TopNavbar() {
     pathname.startsWith("/checks");
 
   const handleLogout = async () => {
-    await signOutDemo();
-    router.push("/login");
+    setIsLoggingOut(true);
+    try {
+      await signOutDemo();
+      router.push("/login");
+    } catch {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
-    <header className="bg-surface-container-lowest border-b border-[#DFE5E8] shadow-sm sticky top-0 z-40">
+    <>
+      {/* Full-screen logout overlay covering navbar and viewport */}
+      {isLoggingOut && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/95 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4 text-center p-6">
+            <div className="h-10 w-10 animate-spin rounded-full border-3 border-[#087F68] border-t-transparent" />
+            <div>
+              <h3 className="font-label-lg text-label-lg font-bold text-on-surface">
+                Signing out…
+              </h3>
+              <p className="font-body-sm text-body-sm text-secondary mt-0.5">
+                Clearing secure session and returning to login
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <header className="bg-surface-container-lowest border-b border-[#DFE5E8] shadow-sm sticky top-0 z-40">
       <div className="w-full px-4 md:px-margin-desktop max-w-[1280px] mx-auto flex items-center justify-between h-16">
         {/* Brand & Left Navigation Links */}
         <div className="flex items-center gap-8">
@@ -94,5 +118,6 @@ export default function TopNavbar() {
         </div>
       </div>
     </header>
+  </>
   );
 }
