@@ -18,6 +18,15 @@ export default function NewPaymentCheckPage() {
     `Invoice Details:\nMerchant: GreenLeaf Demo Store (ID: mer_990142)\nInvoice Number: GL-204\nDue Date: 2024-05-24\nAmount Due: USD 12.50\nPayment Route: PayPal Sandbox Direct\nItem description: Organic matcha starter kit`
   );
 
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedIntent = sessionStorage.getItem("saypay_intent");
+      const storedRequest = sessionStorage.getItem("saypay_request");
+      if (storedIntent) setIntentText(storedIntent);
+      if (storedRequest) setRequestText(storedRequest);
+    }
+  }, []);
+
   const [isListening, setIsListening] = useState(false);
   const [toastDismissed, setToastDismissed] = useState(false);
 
@@ -33,7 +42,18 @@ export default function NewPaymentCheckPage() {
   };
 
   const handleCheckPayment = () => {
-    router.push("/checks/chk_demo_204");
+    const isProblematic =
+      requestText.includes("125.00") ||
+      requestText.includes("Untrusted Escrow") ||
+      requestText.includes("OVERRIDE") ||
+      requestText.includes("Gift Card") ||
+      intentText.includes("GL-204 again");
+
+    if (isProblematic) {
+      router.push("/new-check/review");
+    } else {
+      router.push("/checks/chk_demo_204");
+    }
   };
 
   const intentEntered = intentText.trim().length > 0;

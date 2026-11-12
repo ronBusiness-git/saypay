@@ -1,9 +1,12 @@
 import crypto from "crypto";
 
-const PAYPAL_BASE_URL =
-  process.env.PAYPAL_BASE_URL || "https://api-m.sandbox.paypal.com";
-const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
-const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET;
+function getPayPalCredentials() {
+  return {
+    baseUrl: process.env.PAYPAL_BASE_URL || "https://api-m.sandbox.paypal.com",
+    clientId: process.env.PAYPAL_CLIENT_ID,
+    clientSecret: process.env.PAYPAL_CLIENT_SECRET,
+  };
+}
 
 // In-memory token cache to prevent redundant token requests
 let tokenCache = {
@@ -16,11 +19,12 @@ let tokenCache = {
  * @returns {boolean}
  */
 export function isPayPalConfigured() {
+  const { clientId, clientSecret } = getPayPalCredentials();
   return (
-    !!PAYPAL_CLIENT_ID &&
-    !!PAYPAL_CLIENT_SECRET &&
-    !PAYPAL_CLIENT_ID.includes("your_paypal") &&
-    !PAYPAL_CLIENT_SECRET.includes("your_paypal")
+    !!clientId &&
+    !!clientSecret &&
+    !clientId.includes("your_paypal") &&
+    !clientSecret.includes("your_paypal")
   );
 }
 
@@ -36,6 +40,8 @@ export async function getPayPalAccessToken() {
     return tokenCache.accessToken;
   }
 
+  const { baseUrl, clientId, clientSecret } = getPayPalCredentials();
+
   if (!isPayPalConfigured()) {
     throw new Error(
       "PayPal Sandbox credentials are not configured in .env.local. Please set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET."
@@ -43,10 +49,10 @@ export async function getPayPalAccessToken() {
   }
 
   const basicAuth = Buffer.from(
-    `${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`
+    `${clientId}:${clientSecret}`
   ).toString("base64");
 
-  const response = await fetch(`${PAYPAL_BASE_URL}/v1/oauth2/token`, {
+  const response = await fetch(`${baseUrl}/v1/oauth2/token`, {
     method: "POST",
     headers: {
       Authorization: `Basic ${basicAuth}`,
@@ -93,6 +99,7 @@ export async function createPayPalOrder({
   description = "SayPay verified payment",
   idempotencyKey = null,
 }) {
+  const { baseUrl } = getPayPalCredentials();
   const token = await getPayPalAccessToken();
   const requestId = idempotencyKey || crypto.randomUUID();
 
@@ -111,7 +118,7 @@ export async function createPayPalOrder({
     ],
   };
 
-  const response = await fetch(`${PAYPAL_BASE_URL}/v2/checkout/orders`, {
+  const response = await fetch(`${baseUrl}/v2/checkout/orders`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -152,11 +159,12 @@ export async function createPayPalOrder({
  * @returns {Promise<{ captureId: string, status: string, raw: object }>}
  */
 export async function capturePayPalOrder({ orderId, idempotencyKey = null }) {
+  const { baseUrl } = getPayPalCredentials();
   const token = await getPayPalAccessToken();
   const requestId = idempotencyKey || crypto.randomUUID();
 
   const response = await fetch(
-    `${PAYPAL_BASE_URL}/v2/checkout/orders/${orderId}/capture`,
+    `${baseUrl}/v2/checkout/orders/${orderId}/capture`,
     {
       method: "POST",
       headers: {
@@ -199,9 +207,10 @@ export async function capturePayPalOrder({ orderId, idempotencyKey = null }) {
  * @returns {Promise<object>}
  */
 export async function getPayPalOrderDetails(orderId) {
+  const { baseUrl } = getPayPalCredentials();
   const token = await getPayPalAccessToken();
 
-  const response = await fetch(`${PAYPAL_BASE_URL}/v2/checkout/orders/${orderId}`, {
+  const response = await fetch(`${baseUrl}/v2/checkout/orders/${orderId}`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,

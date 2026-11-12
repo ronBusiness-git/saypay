@@ -39,12 +39,12 @@ export function setAiClient(client) {
 }
 
 /**
- * Returns the configured Gemini model name, defaulting to gemini-2.0-flash.
+ * Returns the configured Gemini model name, defaulting to gemini-3.8-flash.
  *
  * @returns {string}
  */
 export function getGeminiModel() {
-    return process.env.GEMINI_MODEL || "gemini-2.0-flash";
+    return process.env.GEMINI_MODEL || "gemini-3.8-flash";
 }
 
 /**
