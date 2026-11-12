@@ -1,12 +1,12 @@
 "use client";
 
 import React, { Suspense } from "react";
-import CheckDetailPage from "../../checks/[checkId]/page.js";
+import TransactionDetailView from "../../../components/transactions/TransactionDetailView.js";
 
 export default function TransactionPage({ params }) {
   return (
     <Suspense fallback={null}>
-      <CheckDetailPage params={params} />
+      <TransactionDetailView params={params} />
     </Suspense>
   );
 }
