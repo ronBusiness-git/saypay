@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AgGridReact } from "ag-grid-react";
 import { AllCommunityModule, ModuleRegistry, themeQuartz } from "ag-grid-community";
 
@@ -106,14 +107,18 @@ export function MerchantCell(params) {
 
 export function ActionCell(params) {
   const action = params.data?.action;
-  if (!action) return null;
+  const href =
+    action?.href ||
+    (params.data?.id ? `/receipt/${encodeURIComponent(params.data.id)}` : null);
+  if (!href) return null;
   return (
     <Link
-      href={action.href}
-      className="inline-flex items-center gap-1 whitespace-nowrap text-[12px] font-semibold text-primary hover:text-primary-container hover:underline"
+      href={href}
+      onClick={(e) => e.stopPropagation()}
+      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-[#A7F3D0] bg-[#EAF7F1] px-2.5 py-1 text-[12px] font-semibold text-[#006451] transition-colors hover:bg-[#087F68] hover:text-white"
     >
-      {action.label}
-      <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
+      <span className="material-symbols-outlined text-[14px]">receipt_long</span>
+      Receipt
     </Link>
   );
 }
@@ -191,11 +196,11 @@ const DASHBOARD_COLUMNS = [
   },
   {
     field: "action",
-    headerName: "",
-    width: 84,
-    minWidth: 76,
+    headerName: "RECEIPT",
+    width: 120,
+    minWidth: 108,
     sortable: false,
-    valueGetter: (params) => params.data?.action?.label,
+    valueGetter: (params) => params.data?.action?.label || "Receipt",
     cellRenderer: ActionCell,
     cellStyle: RIGHT_STYLE,
   },
@@ -251,10 +256,10 @@ const HISTORY_COLUMNS = [
   },
   {
     field: "action",
-    headerName: "ACTION",
-    width: 168,
+    headerName: "RECEIPT",
+    width: 136,
     sortable: false,
-    valueGetter: (params) => params.data?.action?.label,
+    valueGetter: (params) => params.data?.action?.label || "Receipt",
     cellRenderer: ActionCell,
     cellStyle: RIGHT_STYLE,
   },
@@ -269,6 +274,7 @@ export default function SayPayGrid({
   height,
   ariaLabel = "Data grid",
 }) {
+  const router = useRouter();
   const columnDefs =
     variant === "history" ? HISTORY_COLUMNS : DASHBOARD_COLUMNS;
 
@@ -279,6 +285,15 @@ export default function SayPayGrid({
   const handleGridReady = (params) => {
     fitColumns(params);
     onGridReady?.(params);
+  };
+
+  const handleRowClicked = (params) => {
+    const href =
+      params.data?.action?.href ||
+      (params.data?.id ? `/receipt/${encodeURIComponent(params.data.id)}` : null);
+    if (href) {
+      router.push(href);
+    }
   };
 
   return (
@@ -300,9 +315,11 @@ export default function SayPayGrid({
         animateRows
         suppressMovableColumns
         suppressCellFocus={false}
+        rowStyle={{ cursor: "pointer" }}
         getRowId={(params) => params.data.id}
         onGridReady={handleGridReady}
         onGridSizeChanged={fitColumns}
+        onRowClicked={handleRowClicked}
         localeText={{ noRowsToShow: "No checks match the current filter." }}
       />
     </div>

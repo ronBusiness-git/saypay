@@ -50,7 +50,9 @@ export default function HistoryPage() {
             const initials = (tx.merchantKey || "GL").slice(0, 2).toUpperCase();
             const amountStr = `${tx.currency || "USD"} ${((tx.amountMinor || 0) / 100).toFixed(2)}`;
 
-            const isCompleted = tx.paymentStatus === "COMPLETED";
+            const status = (tx.paymentStatus || "COMPLETED").toUpperCase();
+            const isCompleted = status === "COMPLETED";
+            const isFailedOrCancelled = status === "FAILED" || status === "CANCELLED";
 
             return {
               id: tx.checkId || tx.transactionId,
@@ -68,14 +70,16 @@ export default function HistoryPage() {
               matchCheckCategory: "CLEAR",
               matchCheckIcon: "dot",
               matchCheckStyle: "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]",
-              paymentStatus: tx.paymentStatus || "COMPLETED",
-              paymentCategory: tx.paymentStatus || "COMPLETED",
-              paymentIcon: isCompleted ? "check_circle" : "warning",
+              paymentStatus: status,
+              paymentCategory: status,
+              paymentIcon: isCompleted ? "check_circle" : isFailedOrCancelled ? "error" : "warning",
               paymentStyle: isCompleted
                 ? "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]"
+                : isFailedOrCancelled
+                ? "bg-[#FEE2E2] text-[#DC2626] border-[#FECACA]"
                 : "bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]",
-              actionLabel: "View Details",
-              href: `/new-check`,
+              actionLabel: "Receipt",
+              href: `/receipt/${encodeURIComponent(tx.transactionId || tx.checkId)}`,
             };
           });
           setRealTransactions(mapped);
