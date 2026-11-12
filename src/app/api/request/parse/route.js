@@ -1,8 +1,8 @@
-import { requestInputSchema } from "../../../../../lib/schemas.js";
+import { requestInputSchema } from "@/lib/schemas.js";
 import {
   extractPaymentRequest,
   GeminiExtractionError,
-} from "../../../../../lib/gemini.js";
+} from "@/lib/gemini.js";
 
 export async function POST(request) {
   let body;
@@ -11,7 +11,7 @@ export async function POST(request) {
     body = await request.json();
   } catch {
     return Response.json(
-      { error: "Invalid JSON request" },
+      { error: "Invalid JSON request", retryable: false },
       { status: 400 }
     );
   }
@@ -20,7 +20,7 @@ export async function POST(request) {
 
   if (!input.success) {
     return Response.json(
-      { error: "Provide valid payment request text" },
+      { error: "Provide valid payment request text", retryable: false },
       { status: 400 }
     );
   }
@@ -38,15 +38,18 @@ export async function POST(request) {
     if (error instanceof GeminiExtractionError) {
       return Response.json(
         {
-          error: "Could not parse the payment request. Please retry or enter details manually.",
-          retryable: true,
+          error:
+            error.message ||
+            "Could not parse the payment request. Please retry or enter details manually.",
+          retryable: error.retryable,
+          code: error.code,
         },
-        { status: 503 }
+        { status: error.status || 503 }
       );
     }
 
     return Response.json(
-      { error: "Request failed" },
+      { error: "Request failed", retryable: true },
       { status: 500 }
     );
   }

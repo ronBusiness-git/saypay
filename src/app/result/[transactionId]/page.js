@@ -1,7 +1,8 @@
 "use client";
 
-import React, { Suspense, useState } from "react";
+import React, { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import FlowPageLayout from "../../../components/flow/FlowPageLayout.js";
 import VoiceAssistPanel from "../../../components/flow/VoiceAssistPanel.js";
 import {
@@ -136,14 +137,42 @@ function CopyField({ label, value }) {
 }
 
 function ResultView({ params, onOpenAuditLog }) {
-  const resolved =
-    params && typeof params.then === "function" ? React.use(params) : params;
-  const transactionId = resolved?.transactionId || DEMO_PAYMENT.transactionId;
+  const routeParams = useParams();
+  const transactionId = routeParams?.transactionId || DEMO_PAYMENT.transactionId;
   const state = resultStateForId(transactionId);
   const tone = TONE[state.tone];
   const events = AUDIT_EVENTS[state.key] || AUDIT_EVENTS.completed;
   const copy = ASSIST_COPY[state.key] || ASSIST_COPY.completed;
   const voiceEnabled = state.key !== "pending";
+
+  const [liveTx, setLiveTx] = React.useState(null);
+
+  React.useEffect(() => {
+    if (!transactionId || transactionId.startsWith("txn_demo_")) return;
+
+    fetch(`/api/transactions/${encodeURIComponent(transactionId)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && data.transaction) {
+          setLiveTx(data);
+        }
+      })
+      .catch(() => {});
+  }, [transactionId]);
+
+  const paymentData = liveTx?.receipt ? {
+    merchant: liveTx.transaction.merchantKey || DEMO_PAYMENT.merchant,
+    merchantInitials: (liveTx.transaction.merchantKey || "GL").slice(0, 2).toUpperCase(),
+    merchantId: liveTx.transaction.merchantKey || DEMO_PAYMENT.merchantId,
+    reference: liveTx.receipt.reference || DEMO_PAYMENT.reference,
+    purpose: liveTx.checkSnapshot?.intent?.purpose || DEMO_PAYMENT.purpose,
+    amount: `${liveTx.receipt.currency} ${liveTx.receipt.amountFormatted}`,
+    orderId: liveTx.receipt.paypalOrderId || DEMO_PAYMENT.orderId,
+    captureId: liveTx.receipt.captureId || DEMO_PAYMENT.captureId,
+    confirmedAt: new Date(liveTx.receipt.paidAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
+    confirmationMethod: "Voice / Sandbox Button",
+    checkId: liveTx.transaction.checkId || DEMO_PAYMENT.checkId,
+  } : DEMO_PAYMENT;
 
   const readAloud = () => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
@@ -276,23 +305,23 @@ function ResultView({ params, onOpenAuditLog }) {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex items-start gap-3">
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#A7F3D0] bg-[#EAF7F1] font-label-lg text-label-lg font-bold text-primary-container">
-                    {DEMO_PAYMENT.merchantInitials}
+                    {paymentData.merchantInitials}
                   </span>
                   <div>
                     <p className="font-label-lg text-label-lg font-bold text-on-surface">
-                      {DEMO_PAYMENT.merchant}
+                      {paymentData.merchant}
                     </p>
                     <p className="font-code-sm text-code-sm text-secondary">
-                      {DEMO_PAYMENT.merchantId} · invoice {DEMO_PAYMENT.reference}
+                      {paymentData.merchantId} · invoice {paymentData.reference}
                     </p>
                     <p className="mt-0.5 font-body-sm text-body-sm text-secondary">
-                      {DEMO_PAYMENT.purpose}
+                      {paymentData.purpose}
                     </p>
                   </div>
                 </div>
                 <div className="sm:text-right">
                   <p className="font-headline-lg text-headline-lg font-bold text-[#107E3E]">
-                    {DEMO_PAYMENT.amount}
+                    {paymentData.amount}
                   </p>
                   <span className="inline-flex items-center gap-1 rounded-full border border-[#A7F3D0] bg-[#EAF7F1] px-2 py-0.5 font-label-sm text-[10px] font-bold text-[#107E3E]">
                     <span className="material-symbols-outlined text-[12px]">check_circle</span>
@@ -302,10 +331,10 @@ function ResultView({ params, onOpenAuditLog }) {
               </div>
 
               <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                <CopyField label="PayPal order ID" value={DEMO_PAYMENT.orderId} />
-                <CopyField label="Capture ID" value={DEMO_PAYMENT.captureId} />
-                <CopyField label="Confirmed at" value={DEMO_PAYMENT.confirmedAt} />
-                <CopyField label="Confirmation method" value={DEMO_PAYMENT.confirmationMethod} />
+                <CopyField label="PayPal order ID" value={paymentData.orderId} />
+                <CopyField label="Capture ID" value={paymentData.captureId} />
+                <CopyField label="Confirmed at" value={paymentData.confirmedAt} />
+                <CopyField label="Confirmation method" value={paymentData.confirmationMethod} />
               </div>
 
               <div className="mt-3 flex flex-col gap-2 rounded-xl border border-[#DFE5E8] bg-[#F7F8FA] p-3 sm:flex-row sm:items-center sm:justify-between">

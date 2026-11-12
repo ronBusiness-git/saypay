@@ -12,7 +12,7 @@ export default function SandboxBanner() {
         </span>
         <span className="hidden md:inline-block text-[#B45309] opacity-60">|</span>
         <span className="hidden md:inline-block font-body-sm text-body-sm text-[#B45309]">
-          Simulated Gateway Active &amp; Mock Ledger
+          SayPay Safety Gateway Active
         </span>
       </div>
     </div>

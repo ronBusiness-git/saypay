@@ -6,6 +6,7 @@ const SESSION_KEY = "saypay_demo_session";
 const AUTH_EVENT = "saypay-auth-change";
 
 function subscribe(callback) {
+  if (typeof window === "undefined") return () => {};
   window.addEventListener(AUTH_EVENT, callback);
   window.addEventListener("storage", callback);
   return () => {
@@ -15,6 +16,7 @@ function subscribe(callback) {
 }
 
 function getSnapshot() {
+  if (typeof window === "undefined") return null;
   try {
     return window.localStorage.getItem(SESSION_KEY);
   } catch {
@@ -36,38 +38,74 @@ export function useDemoSession() {
   }
 }
 
-export function signInDemo(email) {
-  const handle = (email || "demo@saypay.app").split("@")[0];
-  const name = handle
-    .split(/[._-]/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-  const session = {
-    email,
-    name: name || "Demo User",
-    initials: (name || "Demo User")
-      .split(" ")
-      .map((part) => part.charAt(0))
-      .join("")
-      .slice(0, 2)
-      .toUpperCase(),
-    signedInAt: new Date().toISOString(),
-  };
+/**
+ * Sign in with email and password via real backend API and update client state.
+ */
+export async function login(email, password = "saypay123") {
   try {
-    window.localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  } catch {
-    return session;
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || "Login failed");
+    }
+
+    const user = data.user;
+    const session = {
+      userId: user.userId,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      merchantKey: user.merchantKey,
+      initials: (user.name || "User")
+        .split(" ")
+        .map((p) => p[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase(),
+      signedInAt: new Date().toISOString(),
+    };
+
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+        window.dispatchEvent(new Event(AUTH_EVENT));
+      } catch (e) {
+        console.warn("Could not save to localStorage:", e);
+      }
+    }
+    return { success: true, user: session };
+  } catch (err) {
+    return { success: false, error: err.message };
   }
-  window.dispatchEvent(new Event(AUTH_EVENT));
-  return session;
 }
 
-export function signOutDemo() {
+/**
+ * Convenience helper for 1-click demo login buttons.
+ */
+export async function signInDemo(email = "buyer@saypay.app", password = "saypay123") {
+  return await login(email, password);
+}
+
+/**
+ * Sign out via backend and clear local state.
+ */
+export async function signOutDemo() {
   try {
-    window.localStorage.removeItem(SESSION_KEY);
+    await fetch("/api/auth/logout", { method: "POST" });
   } catch {
-    return;
+    // Ignore network error on logout
   }
-  window.dispatchEvent(new Event(AUTH_EVENT));
+  if (typeof window !== "undefined") {
+    try {
+      window.localStorage.removeItem(SESSION_KEY);
+      window.dispatchEvent(new Event(AUTH_EVENT));
+    } catch {
+      // Ignore storage errors
+    }
+  }
 }

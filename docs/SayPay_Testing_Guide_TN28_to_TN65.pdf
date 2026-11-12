@@ -1,0 +1,2900 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [6 0 R 8 0 R 10 0 R 12 0 R 14 0 R 16 0 R] /Count 6 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Contents 7 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> >>
+endobj
+7 0 obj
+<< /Length 5654 >>
+stream
+q
+0.030 0.440 0.350 rg
+40.00 816.89 515.28 3.00 re
+f
+Q
+BT
+/F1 8 Tf
+0.400 0.450 0.500 rg
+1 0 0 1 40.00 807.89 Tm
+(SAYPAY MVP  Technical Testing & Verification Guide \(TN-28 to TN-65\)) Tj
+ET
+BT
+/F1 8 Tf
+0.400 0.450 0.500 rg
+1 0 0 1 525.28 25.00 Tm
+(Page 1) Tj
+ET
+BT
+/F1 8 Tf
+0.400 0.450 0.500 rg
+1 0 0 1 40.00 25.00 Tm
+(SayPay MVP  Automated Agent Delivery Protocol) Tj
+ET
+q
+0.800 0.850 0.880 rg
+40.00 35.00 515.28 0.50 re
+f
+Q
+BT
+/F2 20 Tf
+0.030 0.350 0.280 rg
+1 0 0 1 40.00 786.89 Tm
+(SayPay MVP  Engineering Delivery & Testing Guide) Tj
+ET
+BT
+/F1 11 Tf
+0.350 0.400 0.450 rg
+1 0 0 1 40.00 764.89 Tm
+(Tasks TN-28 to TN-65: AI Engine, MatchCheck Safety, PayPal Orders v2 & Demo Lab) Tj
+ET
+q
+0.850 0.880 0.900 rg
+40.00 744.89 515.28 1.00 re
+f
+Q
+q
+0.920 0.970 0.940 rg
+0.650 0.880 0.750 RG
+40.00 682.89 515.28 55.00 re
+B
+Q
+BT
+/F2 9.5 Tf
+0.060 0.450 0.250 rg
+1 0 0 1 52.00 725.89 Tm
+(Sprint Achievement Summary: 49 Total Tasks Completed) Tj
+ET
+BT
+/F1 8.5 Tf
+0.200 0.250 0.300 rg
+1 0 0 1 52.00 712.89 Tm
+(Across the last development iterations, all backend engines, Gemini AI parsing, MatchCheck deterministic safety) Tj
+ET
+BT
+/F1 8.5 Tf
+0.200 0.250 0.300 rg
+1 0 0 1 52.00 701.89 Tm
+(logic, live PayPal Sandbox Orders v2 connectivity, transactions ledger, and Demo Lab test scenarios were fully) Tj
+ET
+BT
+/F1 8.5 Tf
+0.200 0.250 0.300 rg
+1 0 0 1 52.00 690.89 Tm
+(built, unit-tested, and verified against Next.js production builds.) Tj
+ET
+q
+0.030 0.440 0.350 rg
+40.00 658.89 4.00 15.00 re
+f
+Q
+BT
+/F2 14 Tf
+0.050 0.150 0.200 rg
+1 0 0 1 50.00 660.89 Tm
+(1. Executive Summary & Verification Scorecard) Tj
+ET
+BT
+/F1 9.5 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 40.00 642.89 Tm
+(This guide provides comprehensive instructions for evaluating and validating all deliverables) Tj
+ET
+BT
+/F1 9.5 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 40.00 629.89 Tm
+(implemented from task TN-28 through TN-65. The SayPay architecture strictly enforces zero unverified) Tj
+ET
+BT
+/F1 9.5 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 40.00 616.89 Tm
+(payments: the AI model extracts structured fields, deterministic safety algorithms compare intent versus) Tj
+ET
+BT
+/F1 9.5 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 40.00 603.89 Tm
+(request, and PayPal Orders v2 are created only upon an authoritative CLEAR decision.) Tj
+ET
+q
+0.920 0.940 0.960 rg
+0.800 0.840 0.880 RG
+40.00 582.89 515.28 20.00 re
+B
+Q
+BT
+/F2 8.5 Tf
+0.150 0.200 0.250 rg
+1 0 0 1 44.00 587.89 Tm
+(Module) Tj
+ET
+BT
+/F2 8.5 Tf
+0.150 0.200 0.250 rg
+1 0 0 1 154.00 587.89 Tm
+(Task Range) Tj
+ET
+BT
+/F2 8.5 Tf
+0.150 0.200 0.250 rg
+1 0 0 1 239.00 587.89 Tm
+(Status) Tj
+ET
+BT
+/F2 8.5 Tf
+0.150 0.200 0.250 rg
+1 0 0 1 319.00 587.89 Tm
+(Tests / Verification) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 564.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 569.89 Tm
+(AI Integration) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 154.00 569.89 Tm
+(TN-28 to TN-35) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 239.00 569.89 Tm
+(Completed) Tj
+ET
+BT
+/F2 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 319.00 569.89 Tm
+(50/50 tests passed \(gemini-3.8-flash, injecti) Tj
+ET
+q
+0.970 0.980 0.990 rg
+0.880 0.900 0.920 RG
+40.00 546.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 551.89 Tm
+(Safety Engine) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 154.00 551.89 Tm
+(TN-36 to TN-43) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 239.00 551.89 Tm
+(Completed) Tj
+ET
+BT
+/F2 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 319.00 551.89 Tm
+(29/29 tests passed \(7 mandatory scenarios CLE) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 528.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 533.89 Tm
+(PayPal Sandbox Setup) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 154.00 533.89 Tm
+(TN-44 to TN-50) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 239.00 533.89 Tm
+(Completed) Tj
+ET
+BT
+/F2 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 319.00 533.89 Tm
+(Live OAuth token & Sandbox REST App verified) Tj
+ET
+q
+0.970 0.980 0.990 rg
+0.880 0.900 0.920 RG
+40.00 510.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 515.89 Tm
+(PayPal Orders v2) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 154.00 515.89 Tm
+(TN-51, 55, 56, 58) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 239.00 515.89 Tm
+(Completed) Tj
+ET
+BT
+/F2 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 319.00 515.89 Tm
+(Live order creation \(0K681328DL609391P\) & cap) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 492.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 497.89 Tm
+(Transactions API) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 154.00 497.89 Tm
+(TN-59 to TN-61) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 239.00 497.89 Tm
+(Completed) Tj
+ET
+BT
+/F2 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 319.00 497.89 Tm
+(MongoDB persistence, paginated list & audit d) Tj
+ET
+q
+0.970 0.980 0.990 rg
+0.880 0.900 0.920 RG
+40.00 474.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 479.89 Tm
+(Demo Lab Scenarios) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 154.00 479.89 Tm
+(TN-63 to TN-65) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 239.00 479.89 Tm
+(Completed) Tj
+ET
+BT
+/F2 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 319.00 479.89 Tm
+(6 fixtures, 1-click launcher & review explana) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 456.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 461.89 Tm
+(Frontend UI Shell) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 154.00 461.89 Tm
+(TN-52-54, TN-57) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 239.00 461.89 Tm
+(In Progress) Tj
+ET
+BT
+/F2 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 319.00 461.89 Tm
+(Decoupled for teammate Rabin \(rebuilding via ) Tj
+ET
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Contents 9 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> >>
+endobj
+9 0 obj
+<< /Length 19378 >>
+stream
+q
+0.030 0.440 0.350 rg
+40.00 816.89 515.28 3.00 re
+f
+Q
+BT
+/F1 8 Tf
+0.400 0.450 0.500 rg
+1 0 0 1 40.00 807.89 Tm
+(SAYPAY MVP  Technical Testing & Verification Guide \(TN-28 to TN-65\)) Tj
+ET
+BT
+/F1 8 Tf
+0.400 0.450 0.500 rg
+1 0 0 1 525.28 25.00 Tm
+(Page 2) Tj
+ET
+BT
+/F1 8 Tf
+0.400 0.450 0.500 rg
+1 0 0 1 40.00 25.00 Tm
+(SayPay MVP  Automated Agent Delivery Protocol) Tj
+ET
+q
+0.800 0.850 0.880 rg
+40.00 35.00 515.28 0.50 re
+f
+Q
+q
+0.030 0.440 0.350 rg
+40.00 778.89 4.00 15.00 re
+f
+Q
+BT
+/F2 14 Tf
+0.050 0.150 0.200 rg
+1 0 0 1 50.00 780.89 Tm
+(2. Full Task Completion Audit \(TN-28 to TN-65\)) Tj
+ET
+BT
+/F1 9.5 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 40.00 762.89 Tm
+(The table below details the exact status, engineering artifacts, and verification methods for every task) Tj
+ET
+BT
+/F1 9.5 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 40.00 749.89 Tm
+(in the SayPay task tracker from TN-28 through TN-65.) Tj
+ET
+q
+0.920 0.940 0.960 rg
+0.800 0.840 0.880 RG
+40.00 728.89 515.28 20.00 re
+B
+Q
+BT
+/F2 8.5 Tf
+0.150 0.200 0.250 rg
+1 0 0 1 44.00 733.89 Tm
+(Task No) Tj
+ET
+BT
+/F2 8.5 Tf
+0.150 0.200 0.250 rg
+1 0 0 1 89.00 733.89 Tm
+(Task Name) Tj
+ET
+BT
+/F2 8.5 Tf
+0.150 0.200 0.250 rg
+1 0 0 1 209.00 733.89 Tm
+(Module) Tj
+ET
+BT
+/F2 8.5 Tf
+0.150 0.200 0.250 rg
+1 0 0 1 294.00 733.89 Tm
+(Status) Tj
+ET
+BT
+/F2 8.5 Tf
+0.150 0.200 0.250 rg
+1 0 0 1 359.00 733.89 Tm
+(Key Deliverables & Verification) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 710.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 715.89 Tm
+(TN-28) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 715.89 Tm
+(Choose Gemini SDK & Model) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 715.89 Tm
+(AI Integration) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 715.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 715.89 Tm
+(gemini-3.8-flash via @google/genai pinned) Tj
+ET
+q
+0.970 0.980 0.990 rg
+0.880 0.900 0.920 RG
+40.00 692.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 697.89 Tm
+(TN-29) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 697.89 Tm
+(Gemini service wrapper) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 697.89 Tm
+(AI Integration) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 697.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 697.89 Tm
+(Lazy getAiClient\(\), PROMPT_VERSION v1.0.0) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 674.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 679.89 Tm
+(TN-30) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 679.89 Tm
+(Intent extraction schema) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 679.89 Tm
+(AI Integration) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 679.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 679.89 Tm
+(Strict Zod schema rejecting missing/empty fie) Tj
+ET
+q
+0.970 0.980 0.990 rg
+0.880 0.900 0.920 RG
+40.00 656.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 661.89 Tm
+(TN-31) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 661.89 Tm
+(Intent extraction prompt) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 661.89 Tm
+(AI Integration) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 661.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 661.89 Tm
+(<untrusted_payment_text> sandboxing) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 638.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 643.89 Tm
+(TN-32) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 643.89 Tm
+(Request extraction prompt) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 643.89 Tm
+(AI Integration) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 643.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 643.89 Tm
+(Parses invoice payee/amount & warningIndicato) Tj
+ET
+q
+0.970 0.980 0.990 rg
+0.880 0.900 0.920 RG
+40.00 620.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 625.89 Tm
+(TN-33) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 625.89 Tm
+(Validate Gemini responses) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 625.89 Tm
+(AI Integration) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 625.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 625.89 Tm
+(Rejects non-ISO currencies and malformed JSON) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 602.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 607.89 Tm
+(TN-34) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 607.89 Tm
+(Add explanation helper) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 607.89 Tm
+(AI Integration) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 607.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 607.89 Tm
+(Plain-language helper; status strictly author) Tj
+ET
+q
+0.970 0.980 0.990 rg
+0.880 0.900 0.920 RG
+40.00 584.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 589.89 Tm
+(TN-35) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 589.89 Tm
+(Add AI failure fallback) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 589.89 Tm
+(AI Integration) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 589.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 589.89 Tm
+(Timeout/rate limit fallback to offline explan) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 566.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 571.89 Tm
+(TN-36) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 571.89 Tm
+(Money parsing helper) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 571.89 Tm
+(Safety Engine) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 571.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 571.89 Tm
+(src/lib/money.js: integer minor units \(cents\)) Tj
+ET
+q
+0.970 0.980 0.990 rg
+0.880 0.900 0.920 RG
+40.00 548.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 553.89 Tm
+(TN-37) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 553.89 Tm
+(Merchant matching) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 553.89 Tm
+(Safety Engine) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 553.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 553.89 Tm
+(src/lib/matchcheck.js: alias normalization) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 530.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 535.89 Tm
+(TN-38) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 535.89 Tm
+(Field comparison) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 535.89 Tm
+(Safety Engine) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 535.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 535.89 Tm
+(Exact payee, amount, currency & reference che) Tj
+ET
+q
+0.970 0.980 0.990 rg
+0.880 0.900 0.920 RG
+40.00 512.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 517.89 Tm
+(TN-39) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 517.89 Tm
+(Duplicate detection) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 517.89 Tm
+(Safety Engine) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 517.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 517.89 Tm
+(findDuplicatePayment blocks completed referen) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 494.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 499.89 Tm
+(TN-40) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 499.89 Tm
+(Amount limit rule) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 499.89 Tm
+(Safety Engine) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 499.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 499.89 Tm
+(DemoSettings.transactionLimitMinor triggers R) Tj
+ET
+q
+0.970 0.980 0.990 rg
+0.880 0.900 0.920 RG
+40.00 476.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 481.89 Tm
+(TN-41) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 481.89 Tm
+(CLEAR/REVIEW/BLOCKED) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 481.89 Tm
+(Safety Engine) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 481.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 481.89 Tm
+(Deterministic decision engine with BLOCKED pr) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 458.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 463.89 Tm
+(TN-42) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 463.89 Tm
+(MatchCheck API route) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 463.89 Tm
+(Safety Engine) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 463.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 463.89 Tm
+(POST /api/payment/check saves PaymentCheck do) Tj
+ET
+q
+0.970 0.980 0.990 rg
+0.880 0.900 0.920 RG
+40.00 440.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 445.89 Tm
+(TN-43) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 445.89 Tm
+(Server-side eligibility) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 445.89 Tm
+(Safety Engine) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 445.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 445.89 Tm
+(canCreateOrder: true strictly ONLY on CLEAR) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 422.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 427.89 Tm
+(TN-44) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 427.89 Tm
+(PayPal Developer Account) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 427.89 Tm
+(PayPal Sandbox) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 427.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 427.89 Tm
+(developer.paypal.com registered and active) Tj
+ET
+q
+0.970 0.980 0.990 rg
+0.880 0.900 0.920 RG
+40.00 404.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 409.89 Tm
+(TN-45) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 409.89 Tm
+(Sandbox Buyer Account) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 409.89 Tm
+(PayPal Sandbox) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 409.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 409.89 Tm
+(sb-rolz053749782@personal.example.com \($5000\)) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 386.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 391.89 Tm
+(TN-46) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 391.89 Tm
+(Sandbox Seller Account) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 391.89 Tm
+(PayPal Sandbox) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 391.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 391.89 Tm
+(sb-uevff53823118@business.example.com \(GreenL) Tj
+ET
+q
+0.970 0.980 0.990 rg
+0.880 0.900 0.920 RG
+40.00 368.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 373.89 Tm
+(TN-47) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 373.89 Tm
+(SayPay REST App) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 373.89 Tm
+(PayPal Sandbox) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 373.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 373.89 Tm
+(REST App 'SayPay' created in Sandbox dashboar) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 350.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 355.89 Tm
+(TN-48) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 355.89 Tm
+(PayPal env variables) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 355.89 Tm
+(PayPal Sandbox) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 355.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 355.89 Tm
+(PAYPAL_CLIENT_ID & SECRET set in .env.local) Tj
+ET
+q
+0.970 0.980 0.990 rg
+0.880 0.900 0.920 RG
+40.00 332.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 337.89 Tm
+(TN-49) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 337.89 Tm
+(OAuth token helper) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 337.89 Tm
+(PayPal Sandbox) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 337.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 337.89 Tm
+(OAuth 2.0 client credentials acquisition with) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 314.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 319.89 Tm
+(TN-50) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 319.89 Tm
+(Test OAuth connectivity) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 319.89 Tm
+(PayPal Sandbox) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 319.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 319.89 Tm
+(Live token A21AAKUCDOjgH6B... handshake passe) Tj
+ET
+q
+0.970 0.980 0.990 rg
+0.880 0.900 0.920 RG
+40.00 296.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 301.89 Tm
+(TN-51) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 301.89 Tm
+(Create-order server route) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 301.89 Tm
+(PayPal) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 301.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 301.89 Tm
+(POST /api/paypal/create-order \(Orders v2 inte) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 278.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 283.89 Tm
+(TN-52) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 283.89 Tm
+(PayPal SDK client button) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 283.89 Tm
+(PayPal) Tj
+ET
+BT
+/F2 8 Tf
+0.100 0.350 0.650 rg
+1 0 0 1 294.00 283.89 Tm
+(In Progress) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 283.89 Tm
+(Assigned to Rabin for new Stitch UI) Tj
+ET
+q
+0.970 0.980 0.990 rg
+0.880 0.900 0.920 RG
+40.00 260.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 265.89 Tm
+(TN-53) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 265.89 Tm
+(Connect createOrder cb) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 265.89 Tm
+(PayPal) Tj
+ET
+BT
+/F2 8 Tf
+0.100 0.350 0.650 rg
+1 0 0 1 294.00 265.89 Tm
+(In Progress) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 265.89 Tm
+(Assigned to Rabin for new Stitch UI) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 242.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 247.89 Tm
+(TN-54) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 247.89 Tm
+(Buyer approval handling) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 247.89 Tm
+(PayPal) Tj
+ET
+BT
+/F2 8 Tf
+0.100 0.350 0.650 rg
+1 0 0 1 294.00 247.89 Tm
+(In Progress) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 247.89 Tm
+(Assigned to Rabin for new Stitch UI) Tj
+ET
+q
+0.970 0.980 0.990 rg
+0.880 0.900 0.920 RG
+40.00 224.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 229.89 Tm
+(TN-55) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 229.89 Tm
+(Capture-order server route) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 229.89 Tm
+(PayPal) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 229.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 229.89 Tm
+(POST /api/paypal/capture-order transitions to) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 206.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 211.89 Tm
+(TN-56) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 211.89 Tm
+(Add idempotency keys) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 211.89 Tm
+(PayPal) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 211.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 211.89 Tm
+(PayPal-Request-Id header per check prevents r) Tj
+ET
+q
+0.970 0.980 0.990 rg
+0.880 0.900 0.920 RG
+40.00 188.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 193.89 Tm
+(TN-57) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 193.89 Tm
+(Cancel/error callbacks) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 193.89 Tm
+(PayPal) Tj
+ET
+BT
+/F2 8 Tf
+0.100 0.350 0.650 rg
+1 0 0 1 294.00 193.89 Tm
+(In Progress) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 193.89 Tm
+(Assigned to Rabin for new Stitch UI) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 170.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 175.89 Tm
+(TN-58) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 175.89 Tm
+(Order Details reconcil.) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 175.89 Tm
+(PayPal) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 175.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 175.89 Tm
+(reconcileOrderDetails verified on live order) Tj
+ET
+q
+0.970 0.980 0.990 rg
+0.880 0.900 0.920 RG
+40.00 152.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 157.89 Tm
+(TN-59) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 157.89 Tm
+(Persist transaction) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 157.89 Tm
+(Transactions) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 157.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 157.89 Tm
+(Transaction model stores audit snapshot & IDs) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 134.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 139.89 Tm
+(TN-60) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 139.89 Tm
+(Transactions list API) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 139.89 Tm
+(Transactions) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 139.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 139.89 Tm
+(GET /api/transactions with status/merchant fi) Tj
+ET
+q
+0.970 0.980 0.990 rg
+0.880 0.900 0.920 RG
+40.00 116.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 121.89 Tm
+(TN-61) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 121.89 Tm
+(Transaction detail API) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 121.89 Tm
+(Transactions) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 121.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 121.89 Tm
+(GET /api/transactions/[id] formatted receipt) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 98.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 103.89 Tm
+(TN-63) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 103.89 Tm
+(Demo scenario fixtures) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 103.89 Tm
+(Demo Lab) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 103.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 103.89 Tm
+(6 fixtures: Clean, Markup, Phishing, Duplicat) Tj
+ET
+q
+0.970 0.980 0.990 rg
+0.880 0.900 0.920 RG
+40.00 80.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 85.89 Tm
+(TN-64) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 85.89 Tm
+(Scenario launcher UI) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 85.89 Tm
+(Demo Lab) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 85.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 85.89 Tm
+(DemoLabDrawer loads scenario into New Payment) Tj
+ET
+endstream
+endobj
+10 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Contents 11 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> >>
+endobj
+11 0 obj
+<< /Length 926 >>
+stream
+q
+0.030 0.440 0.350 rg
+40.00 816.89 515.28 3.00 re
+f
+Q
+BT
+/F1 8 Tf
+0.400 0.450 0.500 rg
+1 0 0 1 40.00 807.89 Tm
+(SAYPAY MVP  Technical Testing & Verification Guide \(TN-28 to TN-65\)) Tj
+ET
+BT
+/F1 8 Tf
+0.400 0.450 0.500 rg
+1 0 0 1 525.28 25.00 Tm
+(Page 3) Tj
+ET
+BT
+/F1 8 Tf
+0.400 0.450 0.500 rg
+1 0 0 1 40.00 25.00 Tm
+(SayPay MVP  Automated Agent Delivery Protocol) Tj
+ET
+q
+0.800 0.850 0.880 rg
+40.00 35.00 515.28 0.50 re
+f
+Q
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 784.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 789.89 Tm
+(TN-65) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 89.00 789.89 Tm
+(Safety explanations UI) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 209.00 789.89 Tm
+(Demo Lab) Tj
+ET
+BT
+/F2 8 Tf
+0.060 0.500 0.250 rg
+1 0 0 1 294.00 789.89 Tm
+(Completed) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 359.00 789.89 Tm
+(/new-check/review displays exact field discre) Tj
+ET
+endstream
+endobj
+12 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Contents 13 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> >>
+endobj
+13 0 obj
+<< /Length 6060 >>
+stream
+q
+0.030 0.440 0.350 rg
+40.00 816.89 515.28 3.00 re
+f
+Q
+BT
+/F1 8 Tf
+0.400 0.450 0.500 rg
+1 0 0 1 40.00 807.89 Tm
+(SAYPAY MVP  Technical Testing & Verification Guide \(TN-28 to TN-65\)) Tj
+ET
+BT
+/F1 8 Tf
+0.400 0.450 0.500 rg
+1 0 0 1 525.28 25.00 Tm
+(Page 4) Tj
+ET
+BT
+/F1 8 Tf
+0.400 0.450 0.500 rg
+1 0 0 1 40.00 25.00 Tm
+(SayPay MVP  Automated Agent Delivery Protocol) Tj
+ET
+q
+0.800 0.850 0.880 rg
+40.00 35.00 515.28 0.50 re
+f
+Q
+q
+0.030 0.440 0.350 rg
+40.00 778.89 4.00 15.00 re
+f
+Q
+BT
+/F2 14 Tf
+0.050 0.150 0.200 rg
+1 0 0 1 50.00 780.89 Tm
+(3. Interactive Demo Lab Testing Flow \(TN-63 to TN-65\)) Tj
+ET
+BT
+/F1 9.5 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 40.00 762.89 Tm
+(The Demo Lab allows hackathon judges and evaluators to test all 6 core payment safety scenarios) Tj
+ET
+BT
+/F1 9.5 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 40.00 749.89 Tm
+(instantly without typing. Follow these steps to experience the complete verification flow:) Tj
+ET
+BT
+/F2 11 Tf
+0.100 0.200 0.250 rg
+1 0 0 1 40.00 726.89 Tm
+(Step-by-Step UI Verification Flow) Tj
+ET
+BT
+/F1 9.5 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 40.00 712.89 Tm
+(1. Start the development server by running 'npm run dev' and open http://localhost:3000 in your browser.) Tj
+ET
+BT
+/F1 9.5 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 40.00 695.89 Tm
+(2. Click the 'Demo Lab' button on the dashboard or top navigation bar. The DemoLabDrawer will slide open) Tj
+ET
+BT
+/F1 9.5 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 40.00 682.89 Tm
+(from the right.) Tj
+ET
+BT
+/F1 9.5 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 40.00 665.89 Tm
+(3. Select Scenario 1: Safe Payment \(Clean Match\) and click 'Load Scenario'. The New Payment Check page) Tj
+ET
+BT
+/F1 9.5 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 40.00 652.89 Tm
+(\(/new-check\) will pre-fill with intent and invoice request.) Tj
+ET
+BT
+/F1 9.5 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 40.00 635.89 Tm
+(4. Click 'Check this payment'. The deterministic safety engine runs and routes to the verified) Tj
+ET
+BT
+/F1 9.5 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 40.00 622.89 Tm
+(MatchCheck summary \(/checks/chk_demo_204\), enabling the PayPal Sandbox payment button.) Tj
+ET
+BT
+/F1 9.5 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 40.00 605.89 Tm
+(5. Open Demo Lab again and select Scenario 2: Amount Mismatch \(Hidden Markup\) where intended amount is) Tj
+ET
+BT
+/F1 9.5 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 40.00 592.89 Tm
+($12.50 but invoice requests $125.00.) Tj
+ET
+BT
+/F1 9.5 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 40.00 575.89 Tm
+(6. Click 'Check this payment'. The system halts and immediately routes to /new-check/review showing the) Tj
+ET
+BT
+/F1 9.5 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 40.00 562.89 Tm
+(REVIEW state, highlighting the exact $112.50 markup discrepancy and locking checkout.) Tj
+ET
+BT
+/F1 9.5 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 40.00 545.89 Tm
+(7. Test Scenario 3 \(Phishing Recipient\) or Scenario 4 \(Duplicate Payment\) to see the BLOCKED state) Tj
+ET
+BT
+/F1 9.5 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 40.00 532.89 Tm
+(enforcing zero PayPal order creation.) Tj
+ET
+BT
+/F2 11 Tf
+0.100 0.200 0.250 rg
+1 0 0 1 40.00 509.89 Tm
+(Demo Lab Scenarios Specification) Tj
+ET
+q
+0.920 0.940 0.960 rg
+0.800 0.840 0.880 RG
+40.00 491.89 515.28 20.00 re
+B
+Q
+BT
+/F2 8.5 Tf
+0.150 0.200 0.250 rg
+1 0 0 1 44.00 496.89 Tm
+(#) Tj
+ET
+BT
+/F2 8.5 Tf
+0.150 0.200 0.250 rg
+1 0 0 1 64.00 496.89 Tm
+(Scenario Name) Tj
+ET
+BT
+/F2 8.5 Tf
+0.150 0.200 0.250 rg
+1 0 0 1 224.00 496.89 Tm
+(Target Outcome) Tj
+ET
+BT
+/F2 8.5 Tf
+0.150 0.200 0.250 rg
+1 0 0 1 364.00 496.89 Tm
+(Safety Engine Reason Code) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 473.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 478.89 Tm
+(1) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 64.00 478.89 Tm
+(Safe Payment \(Clean Match\)) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 224.00 478.89 Tm
+(CLEAR \(Checkout Enabled\)) Tj
+ET
+BT
+/F2 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 364.00 478.89 Tm
+(None \(All fields match active merchant\)) Tj
+ET
+q
+0.970 0.980 0.990 rg
+0.880 0.900 0.920 RG
+40.00 455.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 460.89 Tm
+(2) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 64.00 460.89 Tm
+(Amount Mismatch \(Hidden Markup\)) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 224.00 460.89 Tm
+(REVIEW / BLOCKED) Tj
+ET
+BT
+/F2 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 364.00 460.89 Tm
+(AMOUNT_MISMATCH \($12.50 vs $125.00\)) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 437.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 442.89 Tm
+(3) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 64.00 442.89 Tm
+(Recipient Mismatch \(Spoofing\)) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 224.00 442.89 Tm
+(BLOCKED \(Checkout Disabled\)) Tj
+ET
+BT
+/F2 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 364.00 442.89 Tm
+(RECIPIENT_MISMATCH \(Untrusted Escrow\)) Tj
+ET
+q
+0.970 0.980 0.990 rg
+0.880 0.900 0.920 RG
+40.00 419.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 424.89 Tm
+(4) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 64.00 424.89 Tm
+(Duplicate Reference) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 224.00 424.89 Tm
+(BLOCKED \(Checkout Disabled\)) Tj
+ET
+BT
+/F2 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 364.00 424.89 Tm
+(DUPLICATE_PAYMENT \(GL-204 already settled\)) Tj
+ET
+q
+1.000 1.000 1.000 rg
+0.880 0.900 0.920 RG
+40.00 401.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 406.89 Tm
+(5) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 64.00 406.89 Tm
+(Prompt Injection Attempt) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 224.00 406.89 Tm
+(REVIEW / BLOCKED) Tj
+ET
+BT
+/F2 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 364.00 406.89 Tm
+(Prompt ignored; warningIndicator flagged) Tj
+ET
+q
+0.970 0.980 0.990 rg
+0.880 0.900 0.920 RG
+40.00 383.89 515.28 18.00 re
+B
+Q
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 44.00 388.89 Tm
+(6) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 64.00 388.89 Tm
+(Scam-style Urgent Pressure) Tj
+ET
+BT
+/F1 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 224.00 388.89 Tm
+(REVIEW \(Checkout Disabled\)) Tj
+ET
+BT
+/F2 8 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 364.00 388.89 Tm
+(Scam signals; off-platform gift card alert) Tj
+ET
+endstream
+endobj
+14 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Contents 15 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> >>
+endobj
+15 0 obj
+<< /Length 5465 >>
+stream
+q
+0.030 0.440 0.350 rg
+40.00 816.89 515.28 3.00 re
+f
+Q
+BT
+/F1 8 Tf
+0.400 0.450 0.500 rg
+1 0 0 1 40.00 807.89 Tm
+(SAYPAY MVP  Technical Testing & Verification Guide \(TN-28 to TN-65\)) Tj
+ET
+BT
+/F1 8 Tf
+0.400 0.450 0.500 rg
+1 0 0 1 525.28 25.00 Tm
+(Page 5) Tj
+ET
+BT
+/F1 8 Tf
+0.400 0.450 0.500 rg
+1 0 0 1 40.00 25.00 Tm
+(SayPay MVP  Automated Agent Delivery Protocol) Tj
+ET
+q
+0.800 0.850 0.880 rg
+40.00 35.00 515.28 0.50 re
+f
+Q
+q
+0.030 0.440 0.350 rg
+40.00 778.89 4.00 15.00 re
+f
+Q
+BT
+/F2 14 Tf
+0.050 0.150 0.200 rg
+1 0 0 1 50.00 780.89 Tm
+(4. API Testing Reference \(Postman / cURL\)) Tj
+ET
+BT
+/F1 9.5 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 40.00 762.89 Tm
+(Use Postman, Insomnia, or cURL to verify each backend Route Handler directly. Ensure 'Content-Type:) Tj
+ET
+BT
+/F1 9.5 Tf
+0.150 0.180 0.200 rg
+1 0 0 1 40.00 749.89 Tm
+(application/json' header is supplied.) Tj
+ET
+BT
+/F2 11 Tf
+0.100 0.200 0.250 rg
+1 0 0 1 40.00 726.89 Tm
+(Endpoint 1: MatchCheck Deterministic Evaluation \(TN-42, TN-43\)) Tj
+ET
+q
+0.950 0.960 0.970 rg
+0.800 0.830 0.860 RG
+40.00 396.89 515.28 328.00 re
+B
+Q
+BT
+/F2 8.5 Tf
+0.200 0.300 0.400 rg
+1 0 0 1 48.00 711.89 Tm
+(POST http://localhost:3000/api/payment/check) Tj
+ET
+q
+0.850 0.880 0.900 rg
+40.00 706.89 515.28 0.50 re
+f
+Q
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 696.89 Tm
+(curl -X POST http://localhost:3000/api/payment/check \\) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 685.89 Tm
+(  -H "Content-Type: application/json" \\) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 674.89 Tm
+(  -d '{) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 663.89 Tm
+(    "intentFields": {) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 652.89 Tm
+(      "recipientName": "GreenLeaf Demo Store",) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 641.89 Tm
+(      "amount": "12.50",) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 630.89 Tm
+(      "currency": "USD",) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 619.89 Tm
+(      "reference": "INV-GL-2026-001") Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 608.89 Tm
+(    },) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 597.89 Tm
+(    "requestFields": {) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 586.89 Tm
+(      "recipientName": "GreenLeaf Demo Store",) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 575.89 Tm
+(      "amount": "12.50",) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 564.89 Tm
+(      "currency": "USD",) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 553.89 Tm
+(      "reference": "INV-GL-2026-001") Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 542.89 Tm
+(    }) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 531.89 Tm
+(  }') Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 520.89 Tm
+() Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 509.89 Tm
+(Expected Response \(200 OK\):) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 498.89 Tm
+({) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 487.89 Tm
+(  "checkId": "c89b2f14-...",) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 476.89 Tm
+(  "status": "CLEAR",) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 465.89 Tm
+(  "canCreateOrder": true,) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 454.89 Tm
+(  "checks": {) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 443.89 Tm
+(    "amount": { "status": "MATCH" },) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 432.89 Tm
+(    "recipient": { "status": "MATCH" },) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 421.89 Tm
+(    "currency": { "status": "MATCH" }) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 410.89 Tm
+(  }) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 399.89 Tm
+(}) Tj
+ET
+BT
+/F2 11 Tf
+0.100 0.200 0.250 rg
+1 0 0 1 40.00 372.89 Tm
+(Endpoint 2: AI Intent Extraction \(TN-28 to TN-31\)) Tj
+ET
+q
+0.950 0.960 0.970 rg
+0.800 0.830 0.860 RG
+40.00 196.89 515.28 174.00 re
+B
+Q
+BT
+/F2 8.5 Tf
+0.200 0.300 0.400 rg
+1 0 0 1 48.00 357.89 Tm
+(POST http://localhost:3000/api/intent/parse) Tj
+ET
+q
+0.850 0.880 0.900 rg
+40.00 352.89 515.28 0.50 re
+f
+Q
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 342.89 Tm
+(curl -X POST http://localhost:3000/api/intent/parse \\) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 331.89 Tm
+(  -H "Content-Type: application/json" \\) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 320.89 Tm
+(  -d '{"text": "Pay GreenLeaf Demo Store 12.50 dollars for invoice 204"}') Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 309.89 Tm
+() Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 298.89 Tm
+(Expected Response \(200 OK\):) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 287.89 Tm
+({) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 276.89 Tm
+(  "fields": {) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 265.89 Tm
+(    "recipientName": "GreenLeaf Demo Store",) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 254.89 Tm
+(    "amount": "12.50",) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 243.89 Tm
+(    "currency": "USD",) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 232.89 Tm
+(    "reference": "204",) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 221.89 Tm
+(    "needsClarification": false) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 210.89 Tm
+(  }) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 199.89 Tm
+(}) Tj
+ET
+endstream
+endobj
+16 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Contents 17 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> >>
+endobj
+17 0 obj
+<< /Length 5170 >>
+stream
+q
+0.030 0.440 0.350 rg
+40.00 816.89 515.28 3.00 re
+f
+Q
+BT
+/F1 8 Tf
+0.400 0.450 0.500 rg
+1 0 0 1 40.00 807.89 Tm
+(SAYPAY MVP  Technical Testing & Verification Guide \(TN-28 to TN-65\)) Tj
+ET
+BT
+/F1 8 Tf
+0.400 0.450 0.500 rg
+1 0 0 1 525.28 25.00 Tm
+(Page 6) Tj
+ET
+BT
+/F1 8 Tf
+0.400 0.450 0.500 rg
+1 0 0 1 40.00 25.00 Tm
+(SayPay MVP  Automated Agent Delivery Protocol) Tj
+ET
+q
+0.800 0.850 0.880 rg
+40.00 35.00 515.28 0.50 re
+f
+Q
+q
+0.030 0.440 0.350 rg
+40.00 778.89 4.00 15.00 re
+f
+Q
+BT
+/F2 14 Tf
+0.050 0.150 0.200 rg
+1 0 0 1 50.00 780.89 Tm
+(5. PayPal Orders v2 & Transactions API \(TN-51 to TN-61\)) Tj
+ET
+BT
+/F2 11 Tf
+0.100 0.200 0.250 rg
+1 0 0 1 40.00 756.89 Tm
+(Endpoint 3: Authoritative PayPal Create-Order \(TN-51, TN-56\)) Tj
+ET
+q
+0.950 0.960 0.970 rg
+0.800 0.830 0.860 RG
+40.00 591.89 515.28 163.00 re
+B
+Q
+BT
+/F2 8.5 Tf
+0.200 0.300 0.400 rg
+1 0 0 1 48.00 741.89 Tm
+(POST http://localhost:3000/api/paypal/create-order) Tj
+ET
+q
+0.850 0.880 0.900 rg
+40.00 736.89 515.28 0.50 re
+f
+Q
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 726.89 Tm
+(curl -X POST http://localhost:3000/api/paypal/create-order \\) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 715.89 Tm
+(  -H "Content-Type: application/json" \\) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 704.89 Tm
+(  -d '{"checkId": "<VALID_CLEAR_CHECK_ID>"}') Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 693.89 Tm
+() Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 682.89 Tm
+(Expected Response \(200 OK\):) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 671.89 Tm
+({) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 660.89 Tm
+(  "orderId": "0K681328DL609391P",) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 649.89 Tm
+(  "status": "CREATED",) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 638.89 Tm
+(  "links": [) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 627.89 Tm
+(    { "rel": "approve", "href": "https://www.sandbox.paypal.com/checkoutnow?token=..." }) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 616.89 Tm
+(  ]) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 605.89 Tm
+(}) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 594.89 Tm
+(* Note: Sending an invalid or BLOCKED checkId returns 403 Forbidden.) Tj
+ET
+BT
+/F2 11 Tf
+0.100 0.200 0.250 rg
+1 0 0 1 40.00 567.89 Tm
+(Endpoint 4: Transaction History & Receipts \(TN-60, TN-61\)) Tj
+ET
+q
+0.950 0.960 0.970 rg
+0.800 0.830 0.860 RG
+40.00 347.89 515.28 218.00 re
+B
+Q
+BT
+/F2 8.5 Tf
+0.200 0.300 0.400 rg
+1 0 0 1 48.00 552.89 Tm
+(GET http://localhost:3000/api/transactions) Tj
+ET
+q
+0.850 0.880 0.900 rg
+40.00 547.89 515.28 0.50 re
+f
+Q
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 537.89 Tm
+(curl http://localhost:3000/api/transactions?limit=10) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 526.89 Tm
+() Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 515.89 Tm
+(Expected Response \(200 OK\):) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 504.89 Tm
+({) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 493.89 Tm
+(  "transactions": [) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 482.89 Tm
+(    {) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 471.89 Tm
+(      "transactionId": "txn_...",) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 460.89 Tm
+(      "checkId": "c89b2f14-...",) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 449.89 Tm
+(      "merchant": { "displayName": "GreenLeaf Demo Store" },) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 438.89 Tm
+(      "amount": "12.50",) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 427.89 Tm
+(      "currency": "USD",) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 416.89 Tm
+(      "status": "COMPLETED",) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 405.89 Tm
+(      "paypalOrderId": "0K681328DL609391P") Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 394.89 Tm
+(    }) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 383.89 Tm
+(  ],) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 372.89 Tm
+(  "total": 1,) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 361.89 Tm
+(  "page": 1) Tj
+ET
+BT
+/F3 7.5 Tf
+0.100 0.150 0.200 rg
+1 0 0 1 48.00 350.89 Tm
+(}) Tj
+ET
+BT
+/F2 11 Tf
+0.100 0.200 0.250 rg
+1 0 0 1 40.00 323.89 Tm
+(6. Live PayPal Sandbox Credentials for Manual Testing) Tj
+ET
+q
+0.940 0.960 0.980 rg
+0.750 0.820 0.900 RG
+40.00 251.89 515.28 66.00 re
+B
+Q
+BT
+/F2 9.5 Tf
+0.080 0.350 0.550 rg
+1 0 0 1 52.00 305.89 Tm
+(Active Sandbox Credentials Configured in .env.local) Tj
+ET
+BT
+/F1 8.5 Tf
+0.200 0.250 0.300 rg
+1 0 0 1 52.00 292.89 Tm
+(Buyer Login: sb-rolz053749782@personal.example.com | Password: a?/eUV62 Seller Business:) Tj
+ET
+BT
+/F1 8.5 Tf
+0.200 0.250 0.300 rg
+1 0 0 1 52.00 281.89 Tm
+(sb-uevff53823118@business.example.com | Password: tbSyUm9! REST Client ID:) Tj
+ET
+BT
+/F1 8.5 Tf
+0.200 0.250 0.300 rg
+1 0 0 1 52.00 270.89 Tm
+(BAAUvxmKBPqDmGI4s2V5djFs5iu3DwyLDG12IdVdyATiFTiBVaedWO7IG2aRdJb5brLMW7NeSl6m8hUHgM Use the buyer credentials) Tj
+ET
+BT
+/F1 8.5 Tf
+0.200 0.250 0.300 rg
+1 0 0 1 52.00 259.89 Tm
+(during Sandbox checkout to test real payments without real money.) Tj
+ET
+endstream
+endobj
+xref
+0 18
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000155 00000 n 
+0000000225 00000 n 
+0000000300 00000 n 
+0000000368 00000 n 
+0000000520 00000 n 
+0000006226 00000 n 
+0000006378 00000 n 
+0000025809 00000 n 
+0000025963 00000 n 
+0000026941 00000 n 
+0000027095 00000 n 
+0000033208 00000 n 
+0000033362 00000 n 
+0000038880 00000 n 
+0000039034 00000 n 
+trailer
+<< /Size 18 /Root 1 0 R >>
+startxref
+44257
+%%EOF

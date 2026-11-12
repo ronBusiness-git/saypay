@@ -54,6 +54,8 @@ export default function FlowPageLayout({
   assistant,
   children,
   showDemoMenu = true,
+  role = "buyer",
+  stages = null,
 }) {
   return (
     <main className="w-full max-w-[1280px] mx-auto px-4 md:px-margin-desktop py-6 sm:py-8 flex-1 flex flex-col gap-5 pb-24 md:pb-10">
@@ -100,6 +102,8 @@ export default function FlowPageLayout({
         tone={tone}
         auditCount={auditCount}
         onOpenAuditLog={onOpenAuditLog}
+        role={role}
+        stages={stages}
       />
 
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-12">

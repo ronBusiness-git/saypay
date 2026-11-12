@@ -1,15 +1,34 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import SayPayLogo from "../../components/SayPayLogo.js";
-import { signInDemo, signOutDemo, useDemoSession } from "../../lib/demoAuth.js";
+import { login, signInDemo, signOutDemo, useDemoSession } from "../../lib/demoAuth.js";
 
-const DEMO_EMAIL = "demo@saypay.app";
-const DEMO_PASSWORD = "saypay-demo";
+const DEMO_BUYER = {
+  email: "buyer@saypay.app",
+  password: "saypay123",
+  name: "John Doe",
+  role: "buyer",
+  badge: "Buyer Account",
+  desc: "Review invoices & authorize payments with voice AI",
+};
 
-const ASSIST_STEPS = ["Listening to intent", "Reading payment request", "Comparing both sources", "Applying safety rules"];
+const DEMO_SELLER = {
+  email: "seller@saypay.app",
+  password: "saypay123",
+  name: "GreenLeaf Demo Store",
+  role: "seller",
+  badge: "Merchant Account",
+  desc: "Create invoices via voice & track incoming revenue",
+};
+
+const ASSIST_STEPS = [
+  "Voice & text intent understanding",
+  "Deterministic MatchCheck safety rules",
+  "Automated invoice linking & generation",
+  "Human 1-click PayPal authorization",
+];
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -26,13 +45,15 @@ function FieldError({ children }) {
 export default function LoginPage() {
   const router = useRouter();
   const session = useDemoSession();
-  const [email, setEmail] = useState(DEMO_EMAIL);
-  const [password, setPassword] = useState(DEMO_PASSWORD);
+
+  const [email, setEmail] = useState("buyer@saypay.app");
+  const [password, setPassword] = useState("saypay123");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [selectedRole, setSelectedRole] = useState("buyer");
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     if (submitting) return;
 
@@ -47,23 +68,43 @@ export default function LoginPage() {
     if (Object.keys(nextErrors).length > 0) return;
 
     setSubmitting(true);
-    window.setTimeout(() => {
-      signInDemo(email.trim());
+    const res = await login(email.trim(), password);
+    setSubmitting(false);
+
+    if (res.success) {
       router.push("/");
-    }, 650);
+    } else {
+      setErrors({ auth: res.error || "Authentication failed. Check credentials." });
+    }
   };
 
-  const useDemoCredentials = () => {
-    setEmail(DEMO_EMAIL);
-    setPassword(DEMO_PASSWORD);
+  const handleRoleSelect = async (account) => {
+    setSelectedRole(account.role);
+    setEmail(account.email);
+    setPassword(account.password);
     setErrors({});
+    setSubmitting(true);
+
+    const res = await signInDemo(account.email, account.password);
+    setSubmitting(false);
+
+    if (res.success) {
+      router.push("/");
+    } else {
+      setErrors({ auth: res.error || "Login failed" });
+    }
+  };
+
+  const handleLogout = async () => {
+    await signOutDemo();
+    router.refresh();
   };
 
   return (
     <main className="mx-auto w-full max-w-[1040px] px-4 py-8 md:px-margin-desktop md:py-14">
       <div className="overflow-hidden rounded-2xl border border-[#DFE5E8] bg-white shadow-[0_18px_50px_-24px_rgba(15,29,39,0.35)]">
         <div className="grid lg:grid-cols-[1.05fr_1fr]">
-          {/* Brand / live assist panel */}
+          {/* Brand / live assist panel (Rabin's Teal Palette) */}
           <aside className="relative overflow-hidden bg-[#0B3A33] px-6 py-8 md:px-9 md:py-10 text-white">
             <div
               aria-hidden="true"
@@ -111,99 +152,114 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <ul className="mt-6 hidden space-y-2.5 sm:block">
-                {ASSIST_STEPS.map((step, i) => (
-                  <li key={step} className="flex items-center gap-2.5 font-body-sm text-[12px] text-[#CDEBE3]">
-                    <span
-                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
-                        i === 0
-                          ? "bg-[#78D8BD] text-[#0B3A33]"
-                          : "border border-white/25 bg-white/5 text-[#9FD9C9]"
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-[12px]">
-                        {i === 0 ? "graphic_eq" : "check"}
-                      </span>
+              <ul className="mt-6 hidden space-y-2 border-t border-white/15 pt-6 sm:block">
+                {ASSIST_STEPS.map((step, idx) => (
+                  <li key={step} className="flex items-center gap-2 font-body-sm text-[12px] text-[#CDEBE3]">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#00A884]/20 font-code-sm text-[10px] text-[#78D8BD]">
+                      {idx + 1}
                     </span>
                     {step}
                   </li>
                 ))}
               </ul>
-
-              <p className="mt-6 hidden items-start gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 font-body-sm text-[11px] leading-relaxed text-[#BFE6DA] sm:mt-8 sm:flex">
-                <span className="material-symbols-outlined text-[14px] text-[#78D8BD]">verified_user</span>
-                Server rules decide every result. The assistant only narrates the checks.
-              </p>
             </div>
           </aside>
 
-          {/* Sign-in form */}
-          <section className="px-6 py-8 md:px-9 md:py-10">
+          {/* Login Form Panel */}
+          <section className="flex flex-col justify-between p-6 sm:p-9">
             {session ? (
-              <div className="flex h-full flex-col justify-center">
-                <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-[#A7F3D0] bg-[#EAF7F1] px-2.5 py-1 font-label-sm text-[10px] font-semibold text-[#107E3E]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                  Session active
-                </span>
-                <h2 className="mt-4 font-headline-md text-headline-md text-on-surface">
-                  You&apos;re already signed in
-                </h2>
-                <p className="mt-2 font-body-md text-body-md text-secondary">
-                  Signed in as <span className="font-semibold text-on-surface">{session.email}</span>.
-                </p>
-                <div className="mt-7 flex flex-col gap-2.5 sm:flex-row">
-                  <Link
-                    href="/"
-                    className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-primary-container px-5 font-label-md text-label-md font-semibold text-white shadow-sm transition-all hover:bg-[#066653] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary-container"
-                  >
-                    Continue to dashboard
-                    <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-                  </Link>
+              <div className="space-y-4">
+                <div className="rounded-xl border border-[#A7F3D0] bg-[#EAF7F1] p-4 text-[#107E3E]">
+                  <p className="font-label-md text-label-md font-semibold">Currently signed in as:</p>
+                  <p className="font-body-md text-body-md font-bold mt-1">{session.name} ({session.email})</p>
+                  <span className="inline-block mt-2 px-2 py-0.5 rounded-full bg-[#107E3E] text-white text-[11px] font-semibold">
+                    {session.role === "seller" ? "Merchant / Seller Mode" : "Buyer Mode"}
+                  </span>
+                </div>
+                <div className="flex gap-2">
                   <button
-                    type="button"
-                    onClick={() => signOutDemo()}
-                    className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-[10px] border border-[#DFE5E8] bg-white px-4 font-label-md text-label-md font-semibold text-secondary transition-colors hover:border-[#FECACA] hover:bg-[#FFF5F5] hover:text-[#DC2626]"
+                    onClick={() => router.push("/")}
+                    className="flex-1 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[10px] bg-primary-container px-5 font-label-md text-label-md font-semibold text-white shadow-sm hover:bg-[#066653]"
                   >
-                    <span className="material-symbols-outlined text-[18px]">logout</span>
+                    Go to Dashboard
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-[10px] border border-[#DFE5E8] bg-white px-4 font-label-md text-label-md font-semibold text-secondary hover:text-[#DC2626] hover:bg-[#FFF5F5]"
+                  >
                     Log out
                   </button>
                 </div>
-                <p className="mt-5 font-body-sm text-[11px] text-secondary">
-                  Use the log out button in the navbar to switch accounts.
-                </p>
               </div>
             ) : (
               <>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#DFE5E8] bg-[#F7F8FA] px-2.5 py-1 font-label-sm text-[10px] font-semibold uppercase tracking-wide text-secondary">
-                  <span className="material-symbols-outlined text-[13px] text-primary">lock</span>
-                  Demo sign in
-                </span>
+                <div>
+                  <h2 className="font-headline-sm text-headline-sm font-semibold text-on-surface">
+                    Log in to SayPay
+                  </h2>
+                  <p className="mt-1 font-body-sm text-body-sm text-secondary">
+                    Select your demo role or enter your credentials below.
+                  </p>
 
-                <h2 className="mt-4 font-headline-md text-headline-md text-on-surface">Welcome back</h2>
-                <p className="mt-1.5 font-body-md text-body-md text-secondary">
-                  Use the demo merchant credentials to open the workspace.
-                </p>
+                  {/* Two Role Quick-Login Cards: Buyer vs Seller */}
+                  <div className="mt-4 grid grid-cols-2 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => handleRoleSelect(DEMO_BUYER)}
+                      disabled={submitting}
+                      className={`p-3 rounded-xl border text-left transition-all ${
+                        selectedRole === "buyer"
+                          ? "border-[#087F68] bg-[#EAF7F1] ring-2 ring-[#087F68]/20"
+                          : "border-[#DFE5E8] bg-white hover:bg-[#F7F8FA]"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="material-symbols-outlined text-[18px] text-[#087F68]">
+                          shopping_bag
+                        </span>
+                        <span className="text-[10px] font-bold text-[#107E3E] uppercase">
+                          Buyer
+                        </span>
+                      </div>
+                      <p className="font-label-md text-label-md font-bold text-on-surface mt-1">
+                        John Doe
+                      </p>
+                      <p className="text-[10px] text-secondary truncate">buyer@saypay.app</p>
+                    </button>
 
-                <div className="mt-5 flex flex-col gap-2 rounded-xl border border-[#DFE5E8] bg-[#F7F8FA] p-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <p className="font-label-sm text-[10px] font-semibold uppercase tracking-wide text-secondary">
-                      Demo credentials
-                    </p>
-                    <p className="mt-0.5 truncate font-code-md text-[12px] text-on-surface">
-                      {DEMO_EMAIL} · {DEMO_PASSWORD}
-                    </p>
+                    <button
+                      type="button"
+                      onClick={() => handleRoleSelect(DEMO_SELLER)}
+                      disabled={submitting}
+                      className={`p-3 rounded-xl border text-left transition-all ${
+                        selectedRole === "seller"
+                          ? "border-[#087F68] bg-[#EAF7F1] ring-2 ring-[#087F68]/20"
+                          : "border-[#DFE5E8] bg-white hover:bg-[#F7F8FA]"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="material-symbols-outlined text-[18px] text-[#087F68]">
+                          storefront
+                        </span>
+                        <span className="text-[10px] font-bold text-[#087F68] uppercase">
+                          Seller
+                        </span>
+                      </div>
+                      <p className="font-label-md text-label-md font-bold text-on-surface mt-1">
+                        GreenLeaf
+                      </p>
+                      <p className="text-[10px] text-secondary truncate">seller@saypay.app</p>
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={useDemoCredentials}
-                    className="inline-flex shrink-0 items-center gap-1 self-start rounded-lg border border-[#A7F3D0] bg-[#EAF7F1] px-2.5 py-1.5 font-label-sm text-[11px] font-semibold text-[#107E3E] transition-colors hover:bg-[#DCF3E8] sm:self-auto"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">content_paste</span>
-                    Autofill
-                  </button>
                 </div>
 
-                <form className="mt-6 space-y-4" onSubmit={handleSubmit} noValidate>
+                {errors.auth && (
+                  <div className="mt-3 rounded-lg border border-[#FECACA] bg-[#FFF5F5] p-2.5 text-xs text-[#DC2626]">
+                    {errors.auth}
+                  </div>
+                )}
+
+                <form className="mt-5 space-y-3.5" onSubmit={handleSubmit} noValidate>
                   <div>
                     <label
                       htmlFor="login-email"
@@ -230,14 +286,11 @@ export default function LoginPage() {
                           if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
                         }}
                         aria-invalid={Boolean(errors.email)}
-                        aria-describedby={errors.email ? "login-email-error" : undefined}
-                        placeholder="you@merchant.com"
+                        placeholder="you@saypay.app"
                         className="min-h-[44px] w-full rounded-lg bg-transparent px-2.5 font-body-md text-body-md text-on-surface placeholder:text-[#9AA6AF] focus:outline-none"
                       />
                     </div>
-                    <div id="login-email-error">
-                      <FieldError>{errors.email}</FieldError>
-                    </div>
+                    <FieldError>{errors.email}</FieldError>
                   </div>
 
                   <div>
@@ -266,46 +319,27 @@ export default function LoginPage() {
                           if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
                         }}
                         aria-invalid={Boolean(errors.password)}
-                        aria-describedby={errors.password ? "login-password-error" : undefined}
-                        placeholder="Enter your password"
+                        placeholder="Enter password (saypay123)"
                         className="min-h-[44px] w-full rounded-lg bg-transparent px-2.5 font-body-md text-body-md text-on-surface placeholder:text-[#9AA6AF] focus:outline-none"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword((prev) => !prev)}
                         aria-label={showPassword ? "Hide password" : "Show password"}
-                        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-secondary transition-colors hover:bg-[#F7F8FA] hover:text-on-surface"
+                        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-secondary transition-colors hover:bg-[#F7F8FA]"
                       >
                         <span className="material-symbols-outlined text-[18px]">
                           {showPassword ? "visibility_off" : "visibility"}
                         </span>
                       </button>
                     </div>
-                    <div id="login-password-error">
-                      <FieldError>{errors.password}</FieldError>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-3">
-                    <label className="flex items-center gap-2 font-body-sm text-[12px] text-secondary">
-                      <input
-                        id="keep-signed-in"
-                        name="keepSignedIn"
-                        type="checkbox"
-                        defaultChecked
-                        className="h-4 w-4 rounded border-[#DFE5E8] accent-[#087F68]"
-                      />
-                      Keep me signed in on this demo
-                    </label>
-                    <span className="font-body-sm text-[12px] text-secondary underline decoration-dotted underline-offset-2">
-                      Forgot password?
-                    </span>
+                    <FieldError>{errors.password}</FieldError>
                   </div>
 
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[10px] bg-primary-container px-5 font-label-md text-label-md font-semibold text-white shadow-sm transition-all hover:bg-[#066653] active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary-container disabled:cursor-not-allowed disabled:opacity-70"
+                    className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[10px] bg-primary-container px-5 font-label-md text-label-md font-semibold text-white shadow-sm transition-all hover:bg-[#066653] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70 mt-2"
                   >
                     {submitting ? (
                       <>
@@ -314,37 +348,21 @@ export default function LoginPage() {
                       </>
                     ) : (
                       <>
-                        Log in
+                        Sign in as {selectedRole === "seller" ? "Merchant" : "Buyer"}
                         <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
                       </>
                     )}
                   </button>
                 </form>
 
-                <p className="mt-5 flex items-start gap-1.5 font-body-sm text-[11px] leading-relaxed text-secondary">
-                  <span className="material-symbols-outlined text-[14px] text-[#B45309]">warning</span>
-                  Frontend demo only. No real accounts, credentials, or money are involved.
+                <p className="mt-5 text-center font-body-sm text-[11px] text-secondary">
+                  Password for demo accounts: <code className="font-mono text-[#087F68] font-bold">saypay123</code>
                 </p>
-
-                <div className="mt-5 border-t border-[#DFE5E8] pt-4">
-                  <Link
-                    href="/"
-                    className="inline-flex items-center gap-1 font-label-md text-label-md font-semibold text-primary transition-colors hover:text-primary-container"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-                    Back to dashboard
-                  </Link>
-                </div>
               </>
             )}
           </section>
         </div>
       </div>
-
-      <p className="mt-5 flex items-center justify-center gap-1.5 font-body-sm text-[11px] text-secondary">
-        <span className="material-symbols-outlined text-[14px]">shield</span>
-        PayPal Sandbox · Simulated gateway · Mock ledger
-      </p>
     </main>
   );
 }

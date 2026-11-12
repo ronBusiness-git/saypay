@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Suspense, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, useParams } from "next/navigation";
 import FlowPageLayout from "../../../../components/flow/FlowPageLayout.js";
 import VoiceAssistPanel from "../../../../components/flow/VoiceAssistPanel.js";
 import { ExpiryTimer } from "../../../../components/flow/CheckoutSummary.js";
@@ -10,25 +10,79 @@ import { CheckoutSkeleton } from "../../../../components/ui/LoadingSkeletons.js"
 
 function PaypalSandbox({ params, onOpenAuditLog }) {
   const router = useRouter();
-  const resolved =
-    params && typeof params.then === "function" ? React.use(params) : params;
-  const checkId = resolved?.checkId || DEMO_PAYMENT.checkId;
+  const searchParams = useSearchParams();
+  const routeParams = useParams();
+  const checkId = routeParams?.checkId || DEMO_PAYMENT.checkId;
+  const queryOrderId = searchParams.get("orderId");
 
+  const [payment, setPayment] = useState(DEMO_PAYMENT);
   const [processing, setProcessing] = useState(false);
-  const timerRef = useRef(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, []);
+    if (!checkId || checkId.startsWith("chk_demo_")) return;
 
-  const continueToPaypal = () => {
+    fetch(`/api/payment/check?checkId=${encodeURIComponent(checkId)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) return;
+        const amountStr = data.intent?.amount || data.request?.amount || "12.50";
+        const currency = data.intent?.currency || data.request?.currency || "USD";
+        const merchant = data.intent?.recipientName || data.request?.recipientName || "GreenLeaf Demo Store";
+        const reference = data.intent?.reference || data.request?.reference || "GL-204";
+
+        setPayment({
+          ...DEMO_PAYMENT,
+          checkId: data.checkId,
+          merchant,
+          amount: `${currency} ${amountStr}`,
+          currency,
+          reference,
+          purpose: data.intent?.purpose || "Invoice payment",
+        });
+      })
+      .catch(() => {});
+  }, [checkId]);
+
+  const continueToPaypal = async () => {
     if (processing) return;
     setProcessing(true);
-    timerRef.current = setTimeout(() => {
-      router.push("/result/txn_demo_204");
-    }, 1800);
+    setError(null);
+
+    try {
+      // 1. Get or create orderId if not already present
+      let currentOrderId = queryOrderId;
+      if (!currentOrderId) {
+        const orderRes = await fetch("/api/paypal/create-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ checkId }),
+        });
+        const orderData = await orderRes.json();
+        if (!orderRes.ok) throw new Error(orderData.error || "Order creation failed");
+        currentOrderId = orderData.orderId;
+      }
+
+      // 2. Capture PayPal Order
+      const captureRes = await fetch("/api/paypal/capture-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ checkId, orderId: currentOrderId }),
+      });
+      const captureData = await captureRes.json();
+      if (!captureRes.ok) throw new Error(captureData.error || "Order capture failed");
+
+      // 3. Route to real result page
+      router.push(`/result/${captureData.transactionId || checkId}`);
+    } catch (err) {
+      console.error("PayPal capture error:", err);
+      if (checkId.startsWith("chk_demo_")) {
+        router.push("/result/txn_demo_204");
+      } else {
+        setError(err.message || "Failed to capture PayPal sandbox order");
+        setProcessing(false);
+      }
+    }
   };
 
   return (
@@ -49,8 +103,8 @@ function PaypalSandbox({ params, onOpenAuditLog }) {
               CONFIRMED_PAY
             </span>
             <span className="inline-flex items-center gap-1 rounded-full border border-[#FDE68A] bg-[#FEF3C7] px-2 py-0.5 font-label-sm text-label-sm font-semibold text-[#B45309]">
-              <span className="material-symbols-outlined text-[13px]">science</span>
-              Sandbox only
+              <span className="material-symbols-outlined text-[12px]">hourglass_top</span>
+              Buyer approval required
             </span>
             <span className="font-code-sm text-code-sm text-secondary">
               Check {checkId}
@@ -60,9 +114,12 @@ function PaypalSandbox({ params, onOpenAuditLog }) {
         assistant={
           <VoiceAssistPanel
             stage={3}
-            greeting="The PayPal window is ready. The microphone is off from here until the result is shown."
-            reply="Approve or cancel in the simulated PayPal window. SayPay will verify the capture on the server before any receipt is shown."
-            actionReply="Use the PayPal Sandbox button. Nothing is captured until PayPal approves and the server verifies it."
+            greeting="The PayPal approval window is open. Microphone is off for privacy — use the buttons in the window to approve or cancel."
+            reply="Once you approve, SayPay captures the order and shows your verified receipt. No money moves in Sandbox."
+            amountReply={`The order amount is locked to ${payment.amount}.`}
+            merchantReply={`The seller is ${payment.merchant} (Sandbox business account).`}
+            whyReply="Voice is turned off while the PayPal window is active to ensure explicit, unambiguous approval."
+            actionReply="Click “Log in & approve in PayPal Sandbox” or “Cancel payment”."
             suggestions={["Why is the mic off?", "What happens after approval?", "Can I still cancel?"]}
             samplePhrase="What happens after approval?"
             voiceEnabled={false}
@@ -74,6 +131,13 @@ function PaypalSandbox({ params, onOpenAuditLog }) {
         <div className="space-y-5">
           <ExpiryTimer seconds={780} />
 
+          {error && (
+            <div className="flex items-start gap-2 rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-3 text-[#991B1B]">
+              <span className="material-symbols-outlined text-[18px]">error</span>
+              <p className="font-body-sm text-body-sm">{error}</p>
+            </div>
+          )}
+
           <section className="rounded-2xl border border-[#A7F3D0] bg-[#F3FBF7] p-4 shadow-sm">
             <div className="flex items-start gap-3">
               <span className="material-symbols-outlined text-[22px] text-[#107E3E]">
@@ -81,11 +145,10 @@ function PaypalSandbox({ params, onOpenAuditLog }) {
               </span>
               <div>
                 <p className="font-label-md text-label-md font-semibold text-on-surface">
-                  You confirmed at 14:32 UTC · server status CONFIRMED_PAY
+                  You confirmed at server status CONFIRMED_PAY
                 </p>
                 <p className="mt-0.5 font-body-sm text-body-sm text-secondary">
-                  Method: voice — heard “pay now”. This confirmation cannot be reused after the
-                  check expires.
+                  Method: verified confirmation. PayPal Order ready for capture.
                 </p>
               </div>
             </div>
@@ -115,21 +178,21 @@ function PaypalSandbox({ params, onOpenAuditLog }) {
                       Paying
                     </p>
                     <p className="font-label-lg text-label-lg font-bold text-on-surface">
-                      {DEMO_PAYMENT.merchant}
+                      {payment.merchant}
                     </p>
                     <p className="font-code-sm text-code-sm text-secondary">
-                      {DEMO_PAYMENT.merchantId} · invoice {DEMO_PAYMENT.reference}
+                      invoice {payment.reference}
                     </p>
                   </div>
                   <p className="text-right font-headline-md text-headline-md font-bold text-on-surface">
-                    {DEMO_PAYMENT.amount}
+                    {payment.amount}
                   </p>
                 </div>
 
                 <dl className="grid grid-cols-2 gap-2 py-3 font-body-sm text-body-sm">
                   <div>
                     <dt className="text-secondary">Item</dt>
-                    <dd className="font-medium text-on-surface">{DEMO_PAYMENT.purpose}</dd>
+                    <dd className="font-medium text-on-surface">{payment.purpose}</dd>
                   </div>
                   <div className="text-right">
                     <dt className="text-secondary">Buyer</dt>
@@ -142,22 +205,33 @@ function PaypalSandbox({ params, onOpenAuditLog }) {
                     warning
                   </span>
                   <p className="font-body-sm text-[12px] leading-relaxed text-[#78350F]">
-                    <span className="font-semibold">Sandbox credentials only.</span> Never enter real
-                    PayPal login details. No real money moves in this demo.
+                    <span className="font-semibold">Sandbox credentials only.</span> Connected to authentic PayPal Sandbox API. No real money moves.
                   </p>
                 </div>
 
                 <button
                   type="button"
+                  id="approve-paypal-sandbox-button"
                   onClick={continueToPaypal}
                   disabled={processing}
                   className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[10px] bg-[#003087] px-4 py-3 font-label-lg text-label-lg font-semibold text-white shadow-sm transition-colors hover:bg-[#001C64] disabled:opacity-70"
                 >
-                  <span className="material-symbols-outlined text-[19px]">login</span>
-                  Log in &amp; approve in PayPal Sandbox
+                  {processing ? (
+                    <>
+                      <span className="material-symbols-outlined animate-spin text-[19px]">
+                        progress_activity
+                      </span>
+                      <span>Capturing payment in Sandbox…</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-[19px]">login</span>
+                      Log in &amp; approve in PayPal Sandbox
+                    </>
+                  )}
                 </button>
                 <p className="mt-2 text-center font-body-sm text-[12px] text-secondary">
-                  Opens a simulated sandbox window · PayPal buyer approval is mandatory
+                  Executes live v2 order capture via PayPal Sandbox API
                 </p>
               </div>
             </div>
@@ -199,21 +273,17 @@ function PaypalSandbox({ params, onOpenAuditLog }) {
           role="alertdialog"
           aria-modal="true"
           aria-label="Confirming with PayPal"
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#15232D]/45 px-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
         >
-          <div className="w-full max-w-sm rounded-2xl border border-[#DFE5E8] bg-white p-6 text-center shadow-xl">
-            <span className="material-symbols-outlined animate-spin text-[40px] text-primary">
+          <div className="flex max-w-sm flex-col items-center rounded-2xl bg-white p-6 text-center shadow-xl">
+            <span className="material-symbols-outlined animate-spin text-[36px] text-[#003087]">
               progress_activity
             </span>
-            <h2 className="mt-3 font-headline-sm text-headline-sm font-semibold text-on-surface">
-              Confirming with PayPal…
-            </h2>
-            <p className="mt-1 font-body-sm text-body-sm text-secondary">
-              Please don’t close this page. SayPay is verifying the capture on the server before
-              showing the result.
+            <p className="mt-3 font-headline-sm text-headline-sm font-semibold text-on-surface">
+              Approving in Sandbox…
             </p>
-            <p className="mt-3 font-code-sm text-[10px] uppercase tracking-wider text-secondary">
-              M6 · Processing payment
+            <p className="mt-1 font-body-sm text-body-sm text-secondary">
+              Capturing order and recording audit trail in database.
             </p>
           </div>
         </div>

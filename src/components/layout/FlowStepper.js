@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { FLOW_STAGES, TONE } from "../../lib/demoFlowData.js";
+import { FLOW_STAGES, MERCHANT_FLOW_STAGES, TONE } from "../../lib/demoFlowData.js";
 
 export default function FlowStepper({
   stage = 1,
@@ -9,18 +9,24 @@ export default function FlowStepper({
   tone = "clear",
   auditCount = 0,
   onOpenAuditLog,
+  role = "buyer",
+  stages = null,
 }) {
   const toneStyle = TONE[tone] || TONE.clear;
+  const activeStages =
+    stages || (role === "seller" ? MERCHANT_FLOW_STAGES : FLOW_STAGES);
+  const flowLabel =
+    role === "seller" ? "Merchant Invoicing Flow" : "Payment safety flow";
 
   return (
     <section
-      aria-label="Payment safety flow"
+      aria-label={flowLabel}
       className="w-full bg-surface-container-lowest border border-[#DFE5E8] rounded-2xl p-4 sm:p-5 shadow-[0_1px_3px_rgba(21,35,45,0.04),0_4px_12px_rgba(21,35,45,0.03)]"
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-label-sm text-label-sm uppercase tracking-wider text-secondary font-semibold">
-            Payment safety flow
+            {flowLabel}
           </span>
           <span
             className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-label-sm text-label-sm font-semibold ${toneStyle.chip}`}
@@ -56,7 +62,7 @@ export default function FlowStepper({
         />
 
         <ol className="relative grid grid-cols-4">
-          {FLOW_STAGES.map((item) => {
+          {activeStages.map((item) => {
             const isComplete = item.number < stage;
             const isCurrent = item.number === stage;
             const isFuture = item.number > stage;

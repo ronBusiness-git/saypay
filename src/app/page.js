@@ -1,125 +1,207 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import ChecksBarChart from "../components/dashboard/ChecksBarChart.js";
 import ChecksLineChart from "../components/dashboard/ChecksLineChart.js";
-import AssistantLiveCard from "../components/dashboard/AssistantLiveCard.js";
-import { GridTableSkeleton } from "../components/ui/LoadingSkeletons.js";
+import VoiceAssistPanel from "../components/flow/VoiceAssistPanel.js";
+import { useRouter } from "next/navigation";
+import {
+  PageHeaderSkeleton,
+  SummaryCardsSkeleton,
+  ChartCardSkeleton,
+  GridTableSkeleton,
+} from "../components/ui/LoadingSkeletons.js";
+import { useDemoSession } from "../lib/demoAuth.js";
 
 const SayPayGrid = dynamic(
   () => import("../components/grid/SayPayGrid.js"),
   {
     ssr: false,
-    loading: () => <GridTableSkeleton rows={5} label="Loading recent checks…" />,
+    loading: () => <GridTableSkeleton rows={5} label="Loading recent activity…" />,
   },
 );
 
-const METRICS = [
-  { label: "Total checks", value: "34", sub: "Logged sessions", icon: "receipt_long", tone: "text-[#15232D]" },
-  { label: "Cleared", value: "19", sub: "Clean telemetry", dot: "#107E3E", tone: "text-[#107E3E]" },
-  { label: "Needs review", value: "9", sub: "Prompt variance", dot: "#B45309", tone: "text-[#B45309]" },
-  { label: "Blocked", value: "6", sub: "Halted pre-auth", dot: "#DC2626", tone: "text-[#DC2626]" },
-  { label: "Completed payments", value: "12", sub: "of 34 checks", icon: "verified", tone: "text-[#0F5C4B]", highlight: true },
-];
+export default function DashboardPage() {
+  const router = useRouter();
+  const session = useDemoSession();
+  const isSeller = session?.role === "seller";
 
-const RECENT_CHECKS = [
-  {
-    id: "chk_demo_204",
-    timestamp: "24 May 2024, 14:32",
-    counterparty: "GreenLeaf Demo Store",
-    amount: "USD 12.50",
-    matchCheck: { label: "CLEAR", className: "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]", icon: "dot" },
-    payment: { label: "COMPLETED", className: "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]", icon: "check_circle" },
-    action: { href: "/checks/chk_demo_204", label: "Open" },
-  },
-  {
-    id: "chk_demo_203",
-    timestamp: "24 May 2024, 11:15",
-    counterparty: "Aura Cloud Hosting",
-    amount: "USD 125.00",
-    matchCheck: { label: "REVIEW", className: "bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]", icon: "warning" },
-    payment: { label: "Not started", className: "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]", icon: "dot" },
-    action: { href: "/checks/chk_demo_203", label: "Open" },
-  },
-  {
-    id: "chk_demo_202",
-    timestamp: "23 May 2024, 18:40",
-    counterparty: "Untrusted Escrow Node 7",
-    amount: "USD 50.00",
-    matchCheck: { label: "BLOCKED", className: "bg-[#FEE2E2] text-[#DC2626] border-[#FECACA]", icon: "block" },
-    payment: { label: "Not started", className: "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]", icon: "dot" },
-    action: { href: "/checks/chk_demo_202", label: "Open" },
-  },
-  {
-    id: "chk_demo_201",
-    timestamp: "23 May 2024, 16:05",
-    counterparty: "Artisan Roast Roastery",
-    amount: "USD 34.00",
-    matchCheck: { label: "CLEAR", className: "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]", icon: "dot" },
-    payment: { label: "CANCELLED", className: "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]", icon: "cancel", subtext: "By voice command" },
-    action: { href: "/checks/chk_demo_201", label: "Open" },
-  },
-  {
-    id: "chk_demo_200",
-    timestamp: "22 May 2024, 09:20",
-    counterparty: "QuickSaaS Global",
-    amount: "USD 89.00",
-    matchCheck: { label: "CLEAR", className: "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]", icon: "dot" },
-    payment: { label: "UNKNOWN", className: "bg-[#F3E8FF] text-[#7E22CE] border-[#E9D5FF]", icon: "sync", subtext: "Pending sync" },
-    action: { href: "/checks/chk_demo_200", label: "Open" },
-  },
-  {
-    id: "chk_demo_199",
-    timestamp: "21 May 2024, 15:45",
-    counterparty: "SwiftParcel Deliveries",
-    amount: "USD 18.20",
-    matchCheck: { label: "CLEAR", className: "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]", icon: "dot" },
-    payment: { label: "COMPLETED", className: "bg-[#EAF7F1] text-[#107E3E] border-[#A7F3D0]", icon: "check_circle" },
-    action: { href: "/checks/chk_demo_199", label: "Open" },
-  },
-];
+  const [stats, setStats] = useState(null);
+  const [unpaidInvoices, setUnpaidInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-const SCENARIOS = [
-  { label: "Safe", name: "GreenLeaf Demo", meta: "$12.50 exact", tone: "text-[#107E3E]", icon: "check_circle" },
-  { label: "Mismatch", name: "Aura Cloud", meta: "$125 vs $12.50", tone: "text-[#B45309]", icon: "warning" },
-  { label: "Duplicate", name: "Repeat Ref", meta: "Invoice conflict", tone: "text-secondary", icon: "content_copy" },
-  { label: "Ambiguous", name: "Voice Prompt", meta: "Low clarity", tone: "text-[#7E22CE]", icon: "mic" },
-];
+  useEffect(() => {
+    async function loadDashboardData() {
+      try {
+        const [statsRes, invoicesRes] = await Promise.all([
+          fetch("/api/dashboard/stats"),
+          fetch("/api/invoices?status=UNPAID"),
+        ]);
 
-export default function DashboardPage({ onOpenDemoLab }) {
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          if (statsData.success) {
+            setStats(statsData);
+          }
+        }
+
+        if (invoicesRes.ok) {
+          const invData = await invoicesRes.json();
+          if (invData.success && Array.isArray(invData.invoices)) {
+            setUnpaidInvoices(invData.invoices);
+          }
+        }
+      } catch (err) {
+        console.warn("Dashboard data fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadDashboardData();
+  }, [session?.role]);
+
+  if (loading) {
+    return (
+      <main className="flex-grow w-full max-w-[1280px] mx-auto px-4 md:px-margin-desktop py-8 md:py-space-xl space-y-6">
+        <PageHeaderSkeleton withActions withEyebrow />
+        <SummaryCardsSkeleton count={5} />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <ChartCardSkeleton variant="bar" />
+          <ChartCardSkeleton variant="line" />
+        </div>
+        <GridTableSkeleton rows={6} label="Loading recent activity…" />
+      </main>
+    );
+  }
+
+  const totals = stats?.totals || {};
+  const isMerchant = stats?.role === "seller" || isSeller;
+
+  // Buyer Metrics vs Merchant Metrics
+  const metrics = isMerchant
+    ? [
+        {
+          label: "Total Invoices",
+          value: String(totals.totalInvoices || 0),
+          sub: "Issued bills",
+          icon: "receipt_long",
+          tone: "text-[#15232D]",
+        },
+        {
+          label: "Collected Revenue",
+          value: `$${((totals.revenueMinor || 0) / 100).toFixed(2)}`,
+          sub: `${totals.paidInvoices || 0} paid invoices`,
+          dot: "#107E3E",
+          tone: "text-[#107E3E]",
+          highlight: true,
+        },
+        {
+          label: "Awaiting Payment",
+          value: `$${((totals.pendingMinor || 0) / 100).toFixed(2)}`,
+          sub: `${totals.unpaidInvoices || 0} pending invoices`,
+          dot: "#B45309",
+          tone: "text-[#B45309]",
+        },
+        {
+          label: "Settled Invoices",
+          value: String(totals.paidInvoices || 0),
+          sub: "Paid via PayPal",
+          dot: "#107E3E",
+          tone: "text-[#107E3E]",
+        },
+        {
+          label: "Active Store",
+          value: "Active",
+          sub: "greenleaf-demo-store",
+          icon: "verified",
+          tone: "text-[#087F68]",
+        },
+      ]
+    : [
+        {
+          label: "Total checks",
+          value: String(totals.checks || 0),
+          sub: "Screened sessions",
+          icon: "receipt_long",
+          tone: "text-[#15232D]",
+        },
+        {
+          label: "Cleared",
+          value: String(totals.clear || 0),
+          sub: "Verified safe",
+          dot: "#107E3E",
+          tone: "text-[#107E3E]",
+        },
+        {
+          label: "Needs review",
+          value: String(totals.review || 0),
+          sub: "Uncertain match",
+          dot: "#B45309",
+          tone: "text-[#B45309]",
+        },
+        {
+          label: "Blocked",
+          value: String(totals.blocked || 0),
+          sub: "Halted pre-auth",
+          dot: "#DC2626",
+          tone: "text-[#DC2626]",
+        },
+        {
+          label: "Completed payments",
+          value: `$${((totals.volumeMinor || 0) / 100).toFixed(2)}`,
+          sub: `${totals.completedPayments || 0} settled via PayPal`,
+          icon: "verified",
+          tone: "text-[#0F5C4B]",
+          highlight: true,
+        },
+      ];
+
   return (
     <main className="flex-grow w-full max-w-[1280px] mx-auto px-4 md:px-margin-desktop py-8 md:py-space-xl">
+      {/* Page Header */}
       <div className="flex flex-col gap-4 border-b border-[#DFE5E8] pb-space-lg md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="font-headline-lg text-headline-lg tracking-tight text-[#15232D]">
-            Welcome back
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="font-headline-lg text-headline-lg tracking-tight text-[#15232D]">
+              Welcome back, {session?.name || (isMerchant ? "GreenLeaf Store" : "John Doe")}
+            </h1>
+            <span className="rounded-full border border-[#DFE5E8] bg-white px-2.5 py-0.5 font-label-sm text-label-sm font-semibold text-secondary">
+              {isMerchant ? "Merchant Mode" : "Buyer Mode"}
+            </span>
+          </div>
           <p className="mt-1 font-body-md text-body-md text-secondary">
-            Compare payment details before you continue to PayPal.
+            {isMerchant
+              ? "Issue invoices via voice AI and monitor real-time payment settlements."
+              : "Compare payment details before you continue to PayPal."}
           </p>
         </div>
+
         <div className="flex flex-wrap items-center gap-2">
           <Link
             href="/history"
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-[10px] border border-[#DFE5E8] bg-white px-4 font-label-md text-label-md font-semibold text-on-surface transition-colors hover:bg-[#F7F8FA] focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary-container"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-[10px] border border-[#DFE5E8] bg-white px-4 font-label-md text-label-md font-semibold text-on-surface transition-colors hover:bg-[#F7F8FA]"
           >
             <span className="material-symbols-outlined text-[18px] text-secondary">history</span>
             View history
           </Link>
           <Link
             href="/new-check"
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-[10px] bg-primary-container px-5 font-label-md text-label-md font-semibold text-white shadow-sm transition-all hover:bg-[#066653] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary-container"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-[10px] bg-primary-container px-5 font-label-md text-label-md font-semibold text-white shadow-sm transition-all hover:bg-[#066653] active:scale-[0.98]"
           >
-            <span className="material-symbols-outlined text-[19px]">add</span>
-            New Payment Check
+            <span className="material-symbols-outlined text-[19px]">
+              {isMerchant ? "add_notes" : "record_voice_over"}
+            </span>
+            {isMerchant ? "Create Invoice (Voice AI)" : "Ask Echo"}
           </Link>
         </div>
       </div>
 
+      {/* Metrics Cards */}
       <div className="mt-space-lg grid grid-cols-2 gap-3 sm:gap-space-md lg:grid-cols-5">
-        {METRICS.map((metric) => (
+        {metrics.map((metric) => (
           <div
             key={metric.label}
             className={`rounded-2xl border p-space-md ${
@@ -133,48 +215,64 @@ export default function DashboardPage({ onOpenDemoLab }) {
               {metric.dot ? (
                 <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: metric.dot }} />
               ) : (
-                <span className={`material-symbols-outlined text-[17px] ${metric.tone}`}>{metric.icon}</span>
+                <span className={`material-symbols-outlined text-[17px] ${metric.tone}`}>
+                  {metric.icon}
+                </span>
               )}
             </div>
             <div className="mt-2 flex items-baseline gap-1.5">
-              <span className={`whitespace-nowrap text-[28px] font-bold leading-none ${metric.tone}`}>{metric.value}</span>
-              {metric.label === "Completed payments" && (
-                <span className="whitespace-nowrap font-label-sm text-label-sm text-secondary">of 34</span>
-              )}
+              <span className={`whitespace-nowrap text-[28px] font-bold leading-none ${metric.tone}`}>
+                {metric.value}
+              </span>
             </div>
             <span className="mt-1.5 block font-body-sm text-body-sm text-secondary">{metric.sub}</span>
           </div>
         ))}
       </div>
 
+      {/* Charts & Main Table Grid */}
       <div className="mt-space-lg grid grid-cols-1 gap-space-lg xl:grid-cols-12">
         <div className="space-y-space-lg xl:col-span-8">
           <div className="grid gap-space-lg lg:grid-cols-2">
-            <ChecksBarChart />
-            <ChecksLineChart />
+            <ChecksBarChart data={stats?.daily} />
+            <ChecksLineChart data={stats?.daily} />
           </div>
 
+          {/* Recent Table */}
           <section className="overflow-hidden rounded-2xl border border-[#DFE5E8] bg-white shadow-[0_1px_3px_rgba(21,35,45,0.04),0_4px_12px_rgba(21,35,45,0.03)]">
             <div className="flex flex-col gap-2 border-b border-[#DFE5E8] p-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="font-headline-sm text-headline-sm text-[#15232D]">Recent payment checks</h2>
+                <h2 className="font-headline-sm text-headline-sm text-[#15232D]">
+                  {isMerchant ? "Issued Invoices & Settlement" : "Recent payment checks"}
+                </h2>
                 <p className="font-body-sm text-body-sm text-secondary">
-                  Sortable screening results and backend settlement status
+                  {isMerchant
+                    ? "Live billing records and buyer payment status from database"
+                    : "Sortable screening results and backend settlement status"}
                 </p>
               </div>
-              <span className="inline-flex items-center gap-1 self-start rounded-full border border-[#DFE5E8] bg-[#F7F8FA] px-2.5 py-1 font-code-sm text-code-sm text-secondary sm:self-auto">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#107E3E]" />
-                Auto-sync active
+              <span className="inline-flex items-center gap-1 self-start rounded-full border border-[#A7F3D0] bg-[#EAF7F1] px-2.5 py-1 font-label-sm text-label-sm text-[#107E3E] sm:self-auto font-semibold">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#107E3E] animate-pulse" />
+                Live MongoDB Sync
               </span>
             </div>
 
             <div className="p-1.5 sm:p-2.5">
-              <SayPayGrid variant="dashboard" rowData={RECENT_CHECKS} ariaLabel="Recent payment checks" />
+              <SayPayGrid
+                variant="history"
+                rowData={stats?.recent || []}
+                ariaLabel="Recent dashboard checks"
+              />
             </div>
 
             <div className="flex flex-col gap-2 border-t border-[#DFE5E8] bg-[#F7F8FA]/40 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <span className="font-body-sm text-body-sm text-secondary">Showing 6 recent simulated actions</span>
-              <Link href="/history" className="inline-flex items-center gap-1 font-label-md text-label-md font-semibold text-primary hover:underline">
+              <span className="font-body-sm text-body-sm text-secondary">
+                Showing {stats?.recent?.length || 0} live records
+              </span>
+              <Link
+                href="/history"
+                className="inline-flex items-center gap-1 font-label-md text-label-md font-semibold text-primary hover:underline"
+              >
                 View full historical log
                 <span className="material-symbols-outlined text-[16px]">chevron_right</span>
               </Link>
@@ -182,44 +280,105 @@ export default function DashboardPage({ onOpenDemoLab }) {
           </section>
         </div>
 
+        {/* Right Column: Interactive Voice Assistant + Invoices summary */}
         <div className="space-y-space-lg xl:col-span-4">
-          <AssistantLiveCard />
+          <VoiceAssistPanel
+            stage={1}
+            role={isMerchant ? "seller" : "buyer"}
+            greeting={
+              isMerchant
+                ? "Hi! I’m Echo. Say what invoice you’d like to create, or ask to view pending payments."
+                : "Hi, I’m Echo. Tell me what bill you’d like to pay, or ask me to show your unpaid invoices."
+            }
+            suggestions={
+              isMerchant
+                ? [
+                    "Create invoice for buyer@saypay.app for $45",
+                    "Show pending invoices",
+                  ]
+                : [
+                    "Show my unpaid bills",
+                    "Pay GreenLeaf coffee order ($12.50)",
+                    "Pay TechNova invoice TN-2210",
+                  ]
+            }
+            onAssistantResult={(result) => {
+              if (result?.action === "prepare_payment" && result.data?.payment) {
+                if (typeof window !== "undefined") {
+                  try {
+                    sessionStorage.setItem("pendingPaymentCheck", JSON.stringify(result.data.payment));
+                  } catch {}
+                }
+                router.push("/new-check");
+              } else if (result?.action === "invoice_created") {
+                // Refresh dashboard to show the new invoice
+                fetch("/api/dashboard/stats")
+                  .then((r) => r.json())
+                  .then((data) => data.success && setStats(data));
+                fetch("/api/invoices?status=UNPAID")
+                  .then((r) => r.json())
+                  .then((data) => data.success && setUnpaidInvoices(data.invoices));
+              }
+            }}
+          />
 
           <section className="rounded-2xl border border-[#DFE5E8] bg-white p-5 shadow-[0_1px_3px_rgba(21,35,45,0.04),0_4px_12px_rgba(21,35,45,0.03)]">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[19px] text-primary">science</span>
-              <h3 className="font-headline-sm text-headline-sm text-[#15232D]">Demo scenarios</h3>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[19px] text-primary">
+                  {isMerchant ? "inventory_2" : "receipt"}
+                </span>
+                <h3 className="font-headline-sm text-headline-sm text-[#15232D]">
+                  {isMerchant ? "Pending Invoices" : "Unpaid Bills"}
+                </h3>
+              </div>
+              <Link
+                href="/new-check"
+                className="font-label-sm text-label-sm text-primary font-semibold hover:underline"
+              >
+                {isMerchant ? "+ Create Invoice" : "Pay with AI ➔"}
+              </Link>
             </div>
-            <p className="mt-0.5 font-body-sm text-body-sm text-secondary">
-              Trigger simulated edge cases against sandbox accounts.
+
+            <p className="font-body-sm text-body-sm text-secondary mb-3">
+              {isMerchant
+                ? "Invoices awaiting payment from buyers."
+                : "Active invoices ready for voice screening and payment."}
             </p>
 
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              {SCENARIOS.map((scenario) => (
-                <button
-                  key={scenario.label}
-                  onClick={onOpenDemoLab}
-                  type="button"
-                  className="rounded-xl border border-[#DFE5E8] bg-white p-2.5 text-left transition-colors hover:bg-[#F7F8FA] focus:outline-none focus:ring-2 focus:ring-primary-container"
+            <div className="space-y-2">
+              {unpaidInvoices.slice(0, 4).map((inv) => (
+                <div
+                  key={inv.invoiceId}
+                  className="p-3 rounded-xl border border-[#DFE5E8] hover:border-[#087F68] bg-[#F7F8FA] hover:bg-white transition-all flex items-center justify-between"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className={`font-label-md text-label-md font-semibold ${scenario.tone}`}>{scenario.label}</span>
-                    <span className={`material-symbols-outlined text-[15px] ${scenario.tone}`}>{scenario.icon}</span>
+                  <div className="pr-2">
+                    <p className="font-label-md text-label-md font-bold text-[#15232D]">
+                      {isMerchant ? inv.buyerEmail : inv.merchantName}
+                    </p>
+                    <p className="font-body-sm text-[11px] text-secondary truncate max-w-[170px]">
+                      {inv.description}
+                    </p>
+                    <span className="font-code-sm text-[10px] text-secondary">
+                      Ref: {inv.invoiceId}
+                    </span>
                   </div>
-                  <p className="mt-1 truncate font-body-sm text-body-sm text-[#15232D]">{scenario.name}</p>
-                  <span className="font-code-sm text-[10px] text-secondary">{scenario.meta}</span>
-                </button>
+                  <div className="text-right flex-shrink-0">
+                    <p className="font-label-md text-label-md font-bold text-[#15232D]">
+                      ${inv.amount}
+                    </p>
+                    {!isMerchant && (
+                      <Link
+                        href="/new-check"
+                        className="inline-block mt-1 rounded-[6px] bg-primary-container px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-[#066653]"
+                      >
+                        Pay
+                      </Link>
+                    )}
+                  </div>
+                </div>
               ))}
             </div>
-
-            <button
-              onClick={onOpenDemoLab}
-              type="button"
-              className="mt-3 flex w-full items-center justify-center gap-1 rounded-lg border border-[#DFE5E8] bg-[#F7F8FA] py-2 font-label-md text-label-md font-semibold text-primary transition-colors hover:bg-[#EAF7F1]"
-            >
-              Open Demo Lab
-              <span className="material-symbols-outlined text-[15px]">open_in_new</span>
-            </button>
           </section>
         </div>
       </div>
