@@ -2,13 +2,22 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import SayPayLogo from "../SayPayLogo.js";
+import { signOutDemo, useDemoSession } from "../../lib/demoAuth.js";
 
 export default function TopNavbar({ onOpenDemoLab, onOpenSettings }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const session = useDemoSession();
   const isDashboard = pathname === "/";
   const isHistory = pathname.startsWith("/history") || pathname.startsWith("/transactions") || pathname.startsWith("/checks");
+  const isLogin = pathname === "/login";
+
+  const handleLogout = () => {
+    signOutDemo();
+    router.push("/login");
+  };
 
   return (
     <header className="bg-surface-container-lowest border-b border-[#DFE5E8] shadow-sm sticky top-0 z-40">
@@ -54,27 +63,6 @@ export default function TopNavbar({ onOpenDemoLab, onOpenSettings }) {
 
         {/* Trailing Action Controls */}
         <div className="flex items-center gap-3">
-          {/* Non-clickable Demo Workspace badge */}
-          <div className="relative group hidden sm:flex items-center">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#EBF5FF] text-secondary text-label-sm font-label-sm border border-[#BFDBFE] cursor-default select-none">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
-              Demo Workspace
-            </span>
-            <div className="absolute bottom-[-32px] left-1/2 -translate-x-1/2 hidden group-hover:block whitespace-nowrap bg-inverse-surface text-inverse-on-surface text-[11px] font-label-sm px-2 py-1 rounded shadow-md pointer-events-none z-50">
-              Single demo workspace, no login
-            </div>
-          </div>
-
-          {/* Trailing Icon Actions */}
-          <button
-            onClick={onOpenDemoLab}
-            aria-label="Open Demo Lab"
-            className="w-10 h-10 rounded-lg flex items-center justify-center text-secondary hover:bg-surface-container-low transition-colors duration-150"
-            title="Demo Lab"
-            type="button"
-          >
-            <span className="material-symbols-outlined text-[20px]">science</span>
-          </button>
           <button
             onClick={onOpenSettings}
             aria-label="Settings"
@@ -85,14 +73,47 @@ export default function TopNavbar({ onOpenDemoLab, onOpenSettings }) {
             <span className="material-symbols-outlined text-[20px]">settings</span>
           </button>
 
-          {/* Primary Emerald Action Button */}
-          <Link
-            href="/new-check"
-            className="min-h-[44px] bg-primary-container text-white px-5 rounded-[10px] font-label-md text-label-md flex items-center gap-1.5 hover:bg-[#066653] active:scale-[0.98] transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary-container"
-          >
-            <span className="material-symbols-outlined text-[18px]">add</span>
-            + New Payment Check
-          </Link>
+          {session ? (
+            <div className="flex items-center gap-2">
+              <div className="hidden sm:flex items-center gap-2 rounded-full border border-[#DFE5E8] bg-[#F7F8FA] py-1 pl-1 pr-3">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-[#A7F3D0] bg-[#EAF7F1] text-[11px] font-bold text-primary">
+                  {session.initials}
+                </span>
+                <span className="hidden lg:block leading-tight">
+                  <span className="block font-label-md text-label-md font-semibold text-on-surface">
+                    {session.name}
+                  </span>
+                  <span className="block font-code-sm text-[10px] text-secondary">
+                    {session.email}
+                  </span>
+                </span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-[10px] border border-[#DFE5E8] bg-white px-3.5 font-label-md text-label-md font-semibold text-secondary transition-colors hover:border-[#FECACA] hover:bg-[#FFF5F5] hover:text-[#DC2626] focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#FECACA]"
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[18px]">logout</span>
+                Log out
+              </button>
+            </div>
+          ) : isLogin ? (
+            <Link
+              href="/"
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-[10px] border border-[#DFE5E8] bg-white px-4 font-label-md text-label-md font-semibold text-on-surface transition-colors hover:bg-[#F7F8FA] focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary-container"
+            >
+              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+              Back to dashboard
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-[10px] bg-primary-container px-5 font-label-md text-label-md font-semibold text-white shadow-sm transition-all hover:bg-[#066653] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary-container"
+            >
+              <span className="material-symbols-outlined text-[18px]">login</span>
+              Log in
+            </Link>
+          )}
         </div>
       </div>
     </header>
