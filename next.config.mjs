@@ -22,11 +22,15 @@ async function logDbStatus() {
   }
 
   try {
-    const conn = await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 2000,
-      connectTimeoutMS: 2000,
+    const connectPromise = mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 1500,
+      connectTimeoutMS: 1500,
       bufferCommands: false,
     });
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("Connection timed out (1.5s limit)")), 1500)
+    );
+    const conn = await Promise.race([connectPromise, timeoutPromise]);
     const dbName = conn.connection.name || "saypay";
     console.log(`[MongoDB] ✅ Database connection verified for build! Connected to: "${dbName}"`);
     await mongoose.disconnect();
