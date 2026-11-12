@@ -6,6 +6,7 @@ import FlowPageLayout from "../../../../components/flow/FlowPageLayout.js";
 import VoiceAssistPanel from "../../../../components/flow/VoiceAssistPanel.js";
 import { ExpiryTimer } from "../../../../components/flow/CheckoutSummary.js";
 import { DEMO_PAYMENT } from "../../../../lib/demoFlowData.js";
+import { CheckoutSkeleton } from "../../../../components/ui/LoadingSkeletons.js";
 
 function PaypalSandbox({ params, onOpenAuditLog }) {
   const router = useRouter();
@@ -293,7 +294,7 @@ function PaypalSandbox({ params, onOpenAuditLog }) {
 
 export default function PaypalSandboxPage(props) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<CheckoutSkeleton />}>
       <PaypalSandbox {...props} />
     </Suspense>
   );

@@ -7,8 +7,8 @@ import { usePathname } from "next/navigation";
 export default function MobileTabBar() {
   const pathname = usePathname();
 
-  // Hidden on checkout flow as per Blueprint 3.3
-  if (pathname.startsWith("/checkout")) {
+  // Hidden on checkout flow as per Blueprint 3.3, and on the standalone login screen
+  if (pathname.startsWith("/checkout") || pathname === "/login") {
     return null;
   }
 

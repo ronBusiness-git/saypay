@@ -3,6 +3,7 @@
 import React, { Suspense, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import MatchCheckView from "../../../components/flow/MatchCheckView.js";
+import { FlowPageSkeleton } from "../../../components/ui/LoadingSkeletons.js";
 import { checkStateForId } from "../../../lib/demoFlowData.js";
 
 function formatCheckToState(dbCheck) {
@@ -158,20 +159,7 @@ function CheckFlow({ params, onOpenAuditLog }) {
 
 export default function CheckDetailPage(props) {
   return (
-    <Suspense
-      fallback={
-        <main className="mx-auto flex w-full max-w-[1280px] flex-1 items-center justify-center px-4 py-16">
-          <div className="flex items-center gap-3 rounded-2xl border border-[#DFE5E8] bg-white px-5 py-4 shadow-sm">
-            <span className="material-symbols-outlined animate-spin text-[22px] text-primary">
-              progress_activity
-            </span>
-            <span className="font-body-md text-body-md text-secondary">
-              Loading safety check…
-            </span>
-          </div>
-        </main>
-      }
-    >
+    <Suspense fallback={<FlowPageSkeleton />}>
       <CheckFlow {...props} />
     </Suspense>
   );

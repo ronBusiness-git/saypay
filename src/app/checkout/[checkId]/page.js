@@ -10,6 +10,7 @@ import {
   ExpiryTimer,
 } from "../../../components/flow/CheckoutSummary.js";
 import { DEMO_PAYMENT } from "../../../lib/demoFlowData.js";
+import { CheckoutSkeleton } from "../../../components/ui/LoadingSkeletons.js";
 
 function CheckoutReview({ params, onOpenAuditLog }) {
   const routeParams = useParams();
@@ -163,7 +164,7 @@ function CheckoutReview({ params, onOpenAuditLog }) {
 
 export default function CheckoutReviewPage(props) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<CheckoutSkeleton />}>
       <CheckoutReview {...props} />
     </Suspense>
   );
